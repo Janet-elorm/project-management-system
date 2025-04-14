@@ -39,7 +39,7 @@ def invite_user(
     invite_entry = crud.create_invite(db, project_id, invite.email)
 
     # Generate invite link
-    invite_link = f"http://localhost:54498/invite/projects/accept-invite?token={invite_entry.token}&projectId={project_id}"
+    invite_link = f"http://localhost:55013/invite/projects/accept-invite?token={invite_entry.token}&projectId={project_id}"
 
     # Send email
     sender_email = os.getenv("SMTP_EMAIL")

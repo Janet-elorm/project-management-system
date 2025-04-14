@@ -79,25 +79,25 @@ def login(user: schemas.UserLogin, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer"}
 
 
-# @auth_router.get("/me")
-# def get_current_user(user_data: dict = Depends(decode_jwt_token), db: Session = Depends(get_db)):
-#     print("🔍 user_data from token:", user_data)
+@auth_router.get("/me")
+def get_current_user(user_data: dict = Depends(decode_jwt_token), db: Session = Depends(get_db)):
+    print("🔍 user_data from token:", user_data)
 
-#     user = crud.get_user_by_id(db, user_data["user_id"])
-#     if not user:
-#         raise HTTPException(status_code=404, detail="User not found")
+    user = crud.get_user_by_id(db, user_data["user_id"])
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
 
 
-#     return {
-#         "user_id": user.user_id,
-#         "first_name": user.first_name,
-#         "last_name": user.last_name,
-#         "email": user.email,
-#         "profile_picture": user.profile_picture
+    return {
+        "user_id": user.user_id,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "email": user.email,
+        "profile_picture": user.profile_picture
         
         
-#     }
+    }
 
 # In your auth.py
 def get_current_user(
@@ -126,6 +126,9 @@ def update_profile(
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"message": "Profile updated successfully", "user": updated_user}
+
+
+
 
 
 # 🔹 Get Any User by ID (For Admins or Public)

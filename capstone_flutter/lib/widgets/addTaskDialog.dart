@@ -120,7 +120,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
                   'assigned_to': _currentUserId, // ✅ now dynamic!
                 };
 
-                await TaskManagerService().createTask(taskData);
+                await TaskManagerService().createTask(widget.projectId, taskData);
                 widget.onTaskAdded();
                 Navigator.of(context).pop();
               }

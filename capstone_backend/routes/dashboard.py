@@ -82,15 +82,15 @@ async def websocket_endpoint(websocket: WebSocket, project_id: int):
 
 
 # Task Routes
-@router.get("/tasks")
-def read_tasks(db: Session = Depends(get_db)):
-    try:
-        return crud.get_tasks(db)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @router.get("/tasks")
+# def read_tasks(db: Session = Depends(get_db)):
+#     try:
+#         return crud.get_tasks(db)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
     
 
-@router.post("/tasks")
+@router.post("/projects/{project_id}/tasks")
 def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
     try:
         return crud.create_task(db, task)
@@ -172,7 +172,7 @@ def get_dashboard_metrics(db: Session = Depends(get_db)):
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/projects", response_model=List[schemas.ProjectRead])
+@router.get("/projects/{project_id}", response_model=List[schemas.ProjectRead])
 def get_user_projects(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
         user_projects = (
@@ -186,6 +186,24 @@ def get_user_projects(current_user: models.User = Depends(get_current_user), db:
         return user_projects
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/projects/single/{project_id}", response_model=schemas.ProjectRead)
+def get_project_by_id(
+    project_id: int, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)  # Add authentication
+):
+    project = db.query(models.Project).filter(models.Project.project_id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Optional: Verify user has access to this project
+    if not (project.creator_id == current_user.user_id or 
+            any(member.user_id == current_user.user_id for member in project.team_members)):
+        raise HTTPException(status_code=403, detail="Not authorized to access this project")
+    
+    return project
+
 
     
     

@@ -40,7 +40,7 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
       print("Tasks data received: $projectTasks"); // Debug print
 
       setState(() {
-        projectData = project;
+        projectData = project as Map<String, dynamic>?;
         tasks = projectTasks;
       });
     } catch (e) {
@@ -55,12 +55,13 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
     }
   }
 
-  void _loadTasks() async {
-    var tasks = await TaskManagerService().fetchProjectTasks(widget.projectId);
-    setState(() {
-      tasks = tasks;
-    });
-  }
+ void _loadTasks() async {
+  var fetchedTasks = await TaskManagerService().fetchProjectTasks(widget.projectId);
+  setState(() {
+    tasks = fetchedTasks;
+  });
+}
+
 
   Future<void> _updateCategory(int taskId, String category) async {
     await TaskManagerService().updateTaskCategory(taskId, category);

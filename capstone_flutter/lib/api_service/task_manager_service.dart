@@ -8,7 +8,7 @@ class TaskManagerService {
 
   Future<List<Map<String, dynamic>>> fetchProjectMembers(int projectId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl projects/$projectId/members'),
+      Uri.parse('$baseUrl /projects/$projectId/members'),
     );
 
     if (response.statusCode == 200) {
@@ -18,31 +18,53 @@ class TaskManagerService {
     }
   }
 
+  // Future<Map<String, dynamic>> fetchProjectDetails(int projectId) async {
+  //   final response = await http.get(
+  //     Uri.parse('$baseUrl/projects/$projectId'),
+  //   );
+
+  //   if (response.statusCode == 200) {
+  //     return jsonDecode(response.body);
+  //   } else {
+  //     throw Exception("Failed to load project (${response.statusCode})");
+  //   }
+  // }
+
   Future<Map<String, dynamic>> fetchProjectDetails(int projectId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/projects/$projectId'),
-    );
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception("Failed to load project (${response.statusCode})");
-    }
+  final response = await http.get(
+    Uri.parse('$baseUrl/projects/single/$projectId'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+  );
+
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body); // ✅ Directly return the object
+  } else {
+    throw Exception("Failed to load project (${response.statusCode})");
   }
+}
 
-  Future<void> createTask(Map<String, dynamic> taskData) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/tasks'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(taskData),
-    );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      print("✅ Task added successfully");
-    } else {
-      throw Exception("❌ Failed to add task: ${response.body}");
-    }
-  }
+
+
+  // Future<void> createTask(Map<String, dynamic> taskData) async {
+  //   final response = await http.post(
+  //     Uri.parse('$baseUrl/tasks'),
+  //     headers: {"Content-Type": "application/json"},
+  //     body: jsonEncode(taskData),
+  //   );
+
+  //   if (response.statusCode == 200 || response.statusCode == 201) {
+  //     print("✅ Task added successfully");
+  //   } else {
+  //     throw Exception("❌ Failed to add task: ${response.body}");
+  //   }
+  // }
 
   Future<List<dynamic>> fetchProjectTasks(int projectId) async {
     final response = await http.get(
@@ -65,6 +87,27 @@ class TaskManagerService {
       throw Exception("Failed to update task category: ${response.body}");
     }
   }
+
+Future<void> createTask(int projectId, Map<String, dynamic> taskData) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+
+  final response = await http.post(
+    Uri.parse('$baseUrl/projects/$projectId/tasks'), // <-- FIXED
+    headers: {
+      "Authorization": "Bearer $token",
+      "Content-Type": "application/json",
+    },
+    body: jsonEncode(taskData),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    print("✅ Task added successfully");
+  } else {
+    throw Exception("❌ Failed to add task: ${response.body}");
+  }
+}
+
 
   Future<void> deleteTask(int taskId) async {
     final response = await http.delete(
