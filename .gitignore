@@ -1,0 +1,24 @@
+# Flutter
+.capacitor/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+.idea/
+android/.gradle/
+ios/Pods/
+*.iml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+.env
+*.db
+
+# macOS
+.DS_Store
