@@ -74,22 +74,6 @@ def get_projects(db: Session):
     except Exception as e:
         raise Exception(f"Error fetching projects: {str(e)}")
     
-# def create_project(db: Session, project: schemas.ProjectCreate):
-#     try:
-#         new_project = models.Project(
-#             title=project.title,
-#             project_description=project.project_description,
-#             workspace=project.workspace,
-#             team_count=project.team_count,
-#             progress=project.progress
-#         )
-#         db.add(new_project)
-#         db.commit()
-#         db.refresh(new_project)
-#         return new_project
-#     except Exception as e:
-#         db.rollback()
-#         raise Exception(f"Error creating project: {str(e)}")
 
 def create_project(db: Session, project: schemas.ProjectCreate, creator_id: int):  # Add creator_id parameter
     try:
@@ -226,37 +210,107 @@ def get_users(db: Session):
     except Exception as e:
         raise Exception(f"Error fetching users: {str(e)}")
 
-# Dashboard metrics
-def get_dashboard_metrics(db: Session):
+# # Dashboard metrics
+# def get_dashboard_metrics(db: Session):
+#     try:
+#         metrics = {}
+        
+#         # Get total projects
+#         metrics["total_projects"] = db.query(func.count(models.Project.project_id)).scalar() or 0
+        
+#         # Get total tasks
+#         metrics["total_tasks"] = db.query(func.count(models.Task.task_id)).scalar() or 0
+        
+#         # Get total users
+#         metrics["total_users"] = db.query(func.count(models.User.user_id)).scalar() or 0
+        
+#         # Get average project progress
+#         avg_progress = db.query(func.avg(models.Project.progress)).scalar()
+#         metrics["average_project_progress"] = float(avg_progress) if avg_progress is not None else 0.0
+        
+#         # Get tasks by priority
+#         priority_counts = db.query(
+#             models.Task.priority, 
+#             func.count(models.Task.task_id)
+#         ).group_by(models.Task.priority).all()
+        
+#         metrics["tasks_by_priority"] = {
+#             priority: count for priority, count in priority_counts
+#         }
+        
+#         return metrics
+#     except Exception as e:
+#         raise Exception(f"Error getting dashboard metrics: {str(e)}")
+
+def get_dashboard_metrics(db: Session, current_user: models.User):
     try:
+        user_id = current_user.user_id
         metrics = {}
-        
-        # Get total projects
-        metrics["total_projects"] = db.query(func.count(models.Project.project_id)).scalar() or 0
-        
-        # Get total tasks
-        metrics["total_tasks"] = db.query(func.count(models.Task.task_id)).scalar() or 0
-        
-        # Get total users
-        metrics["total_users"] = db.query(func.count(models.User.user_id)).scalar() or 0
-        
-        # Get average project progress
-        avg_progress = db.query(func.avg(models.Project.progress)).scalar()
-        metrics["average_project_progress"] = float(avg_progress) if avg_progress is not None else 0.0
-        
-        # Get tasks by priority
+
+        # Projects where user is creator or member
+        user_projects = db.query(models.Project).filter(
+            (models.Project.creator_id == user_id) |
+            (models.Project.team_members.any(user_id=user_id))
+        ).all()
+
+        project_ids = [p.project_id for p in user_projects]
+
+        # Total projects
+        metrics["total_projects"] = len(project_ids)
+
+        # Total tasks for those projects
+        metrics["total_tasks"] = db.query(models.Task).filter(
+            models.Task.project_id.in_(project_ids)
+        ).count()
+
+        # Total users in the team across those projects (unique count)
+        team_user_ids = set()
+        for p in user_projects:
+            for member in p.team_members:
+                team_user_ids.add(member.user_id)
+        metrics["total_users"] = len(team_user_ids)
+
+        # Average project progress
+        if user_projects:
+            avg_progress = sum([p.progress for p in user_projects]) / len(user_projects)
+        else:
+            avg_progress = 0
+        metrics["average_project_progress"] = round(avg_progress, 2)
+
+        # Tasks by priority (for user's projects)
         priority_counts = db.query(
-            models.Task.priority, 
-            func.count(models.Task.task_id)
-        ).group_by(models.Task.priority).all()
-        
-        metrics["tasks_by_priority"] = {
-            priority: count for priority, count in priority_counts
-        }
-        
+            models.Task.priority, func.count(models.Task.task_id)
+        ).filter(models.Task.project_id.in_(project_ids))\
+         .group_by(models.Task.priority).all()
+        metrics["tasks_by_priority"] = {priority: count for priority, count in priority_counts}
+
+        # Assigned tasks (only for current user) - using UserAssignment
+        metrics["assigned_tasks"] = db.query(models.UserAssignment).filter(
+            models.UserAssignment.user_id == user_id
+        ).count()
+
+        # Overdue tasks (user assigned)
+        now = datetime.utcnow()
+        metrics["overdue_tasks"] = db.query(models.Task)\
+            .join(models.UserAssignment)\
+            .filter(
+                models.UserAssignment.user_id == user_id,
+                models.Task.due_date < now,
+                models.Task.category != "Completed"
+            ).count()
+
+        # Completed tasks (user assigned)
+        metrics["completed_tasks"] = db.query(models.Task)\
+            .join(models.UserAssignment)\
+            .filter(
+                models.UserAssignment.user_id == user_id,
+                models.Task.category == "Completed"
+            ).count()
+
         return metrics
     except Exception as e:
         raise Exception(f"Error getting dashboard metrics: {str(e)}")
+
     
 def assign_user_to_task(db: Session, task_id: int, user_id: int):
     task = db.query(models.Task).filter(models.Task.task_id == task_id).first()

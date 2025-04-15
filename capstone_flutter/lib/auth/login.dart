@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:capstone_flutter/api_service/auth_service.dart';
 import 'package:capstone_flutter/auth/signin.dart';
 import 'package:capstone_flutter/pages/dashboard.dart';
+import 'package:http/http.dart' as http;
+import 'package:capstone_flutter/pages/taskManager.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -21,36 +23,84 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
+   @override
+  void initState() {
+    super.initState();
+    checkInviteLink(); // ✅ Run on app start
+  }
+
+  void checkInviteLink() async {
+    final uri = Uri.base;
+    final token = uri.queryParameters['token'];
+    final projectId = uri.queryParameters['projectId'];
+
+    if (token != null && projectId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('invite_token', token);
+      await prefs.setInt('invited_project_id', int.parse(projectId));
+      print("✅ Saved invite token: $token and projectId: $projectId");
+    }
+  }
+
   Future<void> _storeToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
   }
 
   void _loginUser() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      try {
-        final response = await _authService.login(
-          _emailController.text.trim(),
-          _passwordController.text.trim(),
-        );
-        setState(() => _isLoading = false);
+  if (_formKey.currentState!.validate()) {
+    setState(() => _isLoading = true);
+    try {
+      final response = await _authService.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+      setState(() => _isLoading = false);
 
-        if (response != null && response.containsKey("access_token")) {
-          await _storeToken(response['access_token']);
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => DashboardPage()),
+      if (response != null && response.containsKey("access_token")) {
+        await _storeToken(response['access_token']);
+        final prefs = await SharedPreferences.getInstance();
+
+        // ✅ STEP 4: Check for invite token and project ID
+        final inviteToken = prefs.getString('invite_token');
+        final invitedProjectId = prefs.getInt('invited_project_id');
+
+        if (inviteToken != null && invitedProjectId != null) {
+          final acceptResponse = await http.get(
+            Uri.parse('http://127.0.0.1:8000/invite/projects/accept-invite?token=$inviteToken'),
           );
-        } else {
-          _showErrorSnackbar("Login Failed: Invalid credentials.");
+
+          if (acceptResponse.statusCode == 200) {
+            // ✅ Clean up and redirect
+            await prefs.remove('invite_token');
+            await prefs.remove('invited_project_id');
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TaskManagerPage(projectId: invitedProjectId),
+              ),
+            );
+            return; // prevent fallthrough to dashboard
+          } else {
+            print("❌ Failed to accept invite: ${acceptResponse.body}");
+          }
         }
-      } catch (e) {
-        setState(() => _isLoading = false);
-        _showErrorSnackbar("An error occurred. Please try again.");
+
+        // ✅ Fallback if no invite
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardPage()),
+        );
+      } else {
+        _showErrorSnackbar("Login Failed: Invalid credentials.");
       }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showErrorSnackbar("An error occurred. Please try again.");
     }
   }
+}
 
   void _showErrorSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

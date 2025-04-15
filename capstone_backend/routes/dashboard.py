@@ -151,15 +151,26 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
     
 
+# @router.get("/metrics")
+# def get_dashboard_metrics(db: Session = Depends(get_db)):
+#     try:
+#         metrics = crud.get_dashboard_metrics(db)
+#         if not metrics:
+#             return {"message": "No metrics available"}
+#         return metrics
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/metrics")
-def get_dashboard_metrics(db: Session = Depends(get_db)):
+def get_dashboard_metrics(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     try:
-        metrics = crud.get_dashboard_metrics(db)
-        if not metrics:
-            return {"message": "No metrics available"}
-        return metrics
+        return crud.get_dashboard_metrics(db, current_user)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     
     
 # @router.get("/projects/{project_id}", response_model=schemas.ProjectRead)
