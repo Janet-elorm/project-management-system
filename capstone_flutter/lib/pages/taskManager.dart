@@ -55,13 +55,13 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
     }
   }
 
- void _loadTasks() async {
-  var fetchedTasks = await TaskManagerService().fetchProjectTasks(widget.projectId);
-  setState(() {
-    tasks = fetchedTasks;
-  });
-}
-
+  void _loadTasks() async {
+    var fetchedTasks =
+        await TaskManagerService().fetchProjectTasks(widget.projectId);
+    setState(() {
+      tasks = fetchedTasks;
+    });
+  }
 
   Future<void> _updateCategory(int taskId, String category) async {
     await TaskManagerService().updateTaskCategory(taskId, category);
@@ -117,7 +117,9 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const ProgressTrackingPage()),
+                        builder: (context) =>
+                            ProgressTrackingPage(projectId: widget.projectId),
+                      ),
                     );
                   },
                 ),

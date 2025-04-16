@@ -1,3 +1,5 @@
+import 'package:capstone_flutter/pages/progressTracker.dart';
+import 'package:capstone_flutter/pages/taskManager.dart';
 import 'package:capstone_flutter/widgets/projectdata.dart';
 import 'package:flutter/material.dart';
 
@@ -164,56 +166,58 @@ class _SidebarState extends State<Sidebar> {
     );
   }
 
-  List<Widget> _buildProjectList() {
-    return projects
-        .map((project) => ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(24, 0, 4, 0), // Reduced left padding
-              minVerticalPadding: 0,
-              dense: true,
-              horizontalTitleGap: 2,
-              leading: const Icon(
-                Icons.folder_outlined,
-                size: 18,
-                color: Colors.grey,
-              ),
-              title: Text(
-                project.title,
-                style: const TextStyle(fontSize: 13),
-              ),
-              trailing: const Icon(
-                Icons.chevron_right,
-                size: 14,
-                color: Colors.grey,
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProjectTaskManager(
-                        projectId: project.projectId.toString()),
-                  ),
-                );
-              },
-            ))
-        .toList();
-  }
-}
-
-class ProjectTaskManager extends StatelessWidget {
-  final String projectId;
-
-  const ProjectTaskManager({Key? key, required this.projectId})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Project $projectId'),
+ List<Widget> _buildProjectList() {
+  return projects.map((project) {
+    return ListTile(
+      contentPadding: const EdgeInsets.fromLTRB(24, 0, 4, 0),
+      minVerticalPadding: 0,
+      dense: true,
+      horizontalTitleGap: 2,
+      leading: const Icon(
+        Icons.folder_outlined,
+        size: 18,
+        color: Colors.grey,
       ),
-      body: Center(
-        child: Text('Task management for project $projectId'),
+      title: Text(
+        project.title,
+        style: const TextStyle(fontSize: 13),
+      ),
+      trailing: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, size: 16, color: Colors.grey),
+        onSelected: (value) {
+          if (value == 'tasks') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TaskManagerPage(
+                  projectId: project.projectId,
+                ),
+              ),
+            );
+          } else if (value == 'progress') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProgressTrackingPage(
+                  projectId: project.projectId,
+                ),
+              ),
+            );
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'tasks',
+            child: Text('Manage Tasks'),
+          ),
+          const PopupMenuItem(
+            value: 'progress',
+            child: Text('View Progress'),
+          ),
+        ],
       ),
     );
-  }
+  }).toList();
+}
+
 }

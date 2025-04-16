@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,4 +67,80 @@ class AuthService {
       return null;
     }
   }
+
+  Future<Map<String, dynamic>?> uploadProfilePicture(File imageFile) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+
+  if (token == null) return null;
+
+  try {
+    // Create multipart request
+    var request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/users/upload-profile-picture'),
+    );
+
+    // Add headers
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Add image file
+    request.files.add(await http.MultipartFile.fromPath(
+      'file',
+      imageFile.path,
+      filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    ));
+
+    // Send request
+    var response = await request.send();
+    var responseData = await response.stream.bytesToString();
+
+    if (response.statusCode == 200) {
+      return json.decode(responseData);
+    } else {
+      throw Exception('Failed to upload image: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error uploading profile picture: $e');
+    throw e;
+  }
+}
+
+Future<bool> updateProfile({
+  required String firstName,
+  required String lastName,
+  String? phone,
+  String? bio,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+
+  if (token == null) return false;
+
+  try {
+    final response = await http.put(
+      Uri.parse('$baseUrl/me/update'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'first_name': firstName,
+        'last_name': lastName,
+        if (phone != null) 'phone_no': phone,
+        if (bio != null) 'bio': bio,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print('Failed to update profile: ${response.body}');
+      return false;
+    }
+  } catch (e) {
+    print('Error updating profile: $e');
+    return false;
+  }
+}
 }

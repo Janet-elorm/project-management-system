@@ -228,7 +228,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ? TaskManagerPage(
                 projectId: widget.projectId ?? 0) // Use widget.projectId
             : page == "Progress Tracker"
-                ? const ProgressTrackingPage()
+                ? ProgressTrackingPage(projectId: widget.projectId ?? 0,)
                 : const ProjectsPage(),
       ),
     );

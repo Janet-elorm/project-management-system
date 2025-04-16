@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:capstone_flutter/widgets/mainLayout.dart';
 
 class ProgressTrackingPage extends StatefulWidget {
-  const ProgressTrackingPage({Key? key}) : super(key: key);
+  final int projectId;
+  const ProgressTrackingPage({Key? key, required this.projectId}) : super(key: key);
 
   @override
   _ProgressTrackingPageState createState() => _ProgressTrackingPageState();
@@ -14,23 +15,26 @@ class _ProgressTrackingPageState extends State<ProgressTrackingPage> {
   String selectedPage = "Progress Tracker";
 
   void handlePageSelected(String page) {
-    if (page == "Dashboard") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
-    } else if (page == "Progress Tracker") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ProgressTrackingPage()),
-      );
-    } else if (page == "Projects") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ProjectsPage()),
-      );
-    }
+  if (page == "Dashboard") {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const DashboardPage()),
+    );
+  } else if (page == "Progress Tracker") {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProgressTrackingPage(projectId: widget.projectId),
+      ),
+    );
+  } else if (page == "Projects") {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ProjectsPage()),
+    );
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
