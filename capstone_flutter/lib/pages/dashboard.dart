@@ -1,3 +1,4 @@
+import 'package:capstone_flutter/api_service/auth_service.dart';
 import 'package:capstone_flutter/api_service/invite_service.dart';
 import 'package:capstone_flutter/api_service/task_manager_service.dart';
 import 'package:capstone_flutter/widgets/avatar.dart';
@@ -33,6 +34,9 @@ class _DashboardPageState extends State<DashboardPage> {
   int _selectedTabIndex = 0;
   final List<String> _taskTabs = ["To Do", "Completed", "In Progress"];
   List<dynamic> upcomingDeadlines = [];
+  String _searchQuery = '';
+  String? _creatorName;
+
 
 
 
@@ -48,7 +52,17 @@ class _DashboardPageState extends State<DashboardPage> {
     loadProjectsData();
     _loadAssignedTasks();
      // _loadUpcomingDeadlines();
+      loadCurrentUser();
   }
+
+  Future<void> loadCurrentUser() async {
+  final userData = await AuthService().getCurrentUser();
+  if (userData != null) {
+    setState(() {
+      _creatorName = '${userData['first_name']} ${userData['last_name']}';
+    });
+  }
+}
 
   Future<void> loadDashboardData() async {
     setState(() {
@@ -194,7 +208,9 @@ class _DashboardPageState extends State<DashboardPage> {
           progress: 0.0, // New projects start at 0% progress
           teamCount: 1, // Default value, update if needed
           teamAvatars: [], // Provide an empty list if no avatars yet
-          description: _descriptionController.text, // Description added
+          description: _descriptionController.text,
+          creatorName: _creatorName ?? '-',
+ // Description added
         ));
       });
 
@@ -252,6 +268,7 @@ Widget build(BuildContext context) {
   return MainLayout(
     selectedPage: selectedPage,
     onPageSelected: handlePageSelected,
+    
     child: SingleChildScrollView(
       child: IntrinsicHeight(
         child: Padding(
@@ -264,6 +281,7 @@ Widget build(BuildContext context) {
         ),
       ),
     ),
+    
   );
 }
 
@@ -771,7 +789,7 @@ Widget _buildAssignedTasksSection() {
                 _buildPriorityBadge(priority),
               ],
             ),
-            Text('In $category',
+            Text('$category',
                 style: const TextStyle(fontSize: 10, color: Colors.grey)),
             Text('Due: $dueDate', style: const TextStyle(fontSize: 10)),
             LinearProgressIndicator(

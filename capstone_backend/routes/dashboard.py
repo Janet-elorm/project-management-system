@@ -4,6 +4,7 @@ from db import get_db
 import models, schemas, crud
 from typing import List, Dict
 from routes.auth import decode_jwt_token, get_current_user
+from sqlalchemy.orm import joinedload
 
 
 router = APIRouter()
@@ -15,10 +16,11 @@ def dashboard_home():
 # WebSocket connections storage
 active_connections: Dict[int, List[WebSocket]] = {}
 
-@router.get("/projects/all", response_model=List[schemas.ProjectRead])
+@router.get("/projects/all")
 def get_projects(db: Session = Depends(get_db)):
     try:
-        return crud.get_projects(db)
+        projects = db.query(models.Project).options(joinedload(models.Project.creator)).all()
+        return [project_to_dict(p) for p in projects]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
@@ -81,13 +83,13 @@ async def websocket_endpoint(websocket: WebSocket, project_id: int):
             del active_connections[project_id]
 
 
-# Task Routes
-# @router.get("/tasks")
-# def read_tasks(db: Session = Depends(get_db)):
-#     try:
-#         return crud.get_tasks(db)
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/tasks")
+def read_tasks(db: Session = Depends(get_db)):
+    try:
+        return crud.get_tasks(db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
 
 @router.post("/projects/{project_id}/tasks")

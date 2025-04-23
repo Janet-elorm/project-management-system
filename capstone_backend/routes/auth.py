@@ -16,7 +16,7 @@ auth_router = APIRouter()
 # JWT Configuration
 SECRET_KEY = "your_secret_key"  # Change this to a secure key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
 # OAuth2 Scheme for Authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")

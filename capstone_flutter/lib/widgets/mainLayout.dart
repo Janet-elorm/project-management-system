@@ -6,20 +6,22 @@ class MainLayout extends StatelessWidget {
   final String selectedPage;
   final Widget child;
   final Function(String) onPageSelected;
-  final Color backgroundColor; 
+  final Color backgroundColor;
+  final Widget? topBar; // ✅ Optional topBar passed in
 
   const MainLayout({
     Key? key,
     required this.selectedPage,
     required this.child,
     required this.onPageSelected,
-    this.backgroundColor = Colors.white, 
+    this.backgroundColor = Colors.white,
+    this.topBar, // ✅ Receive topBar
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor, 
+      backgroundColor: backgroundColor,
       body: Row(
         children: [
           Sidebar(
@@ -29,7 +31,8 @@ class MainLayout extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                const TopBar(),
+                topBar ?? const TopBar(apiBaseUrl: 'http://127.0.0.1:8000')
+, // ✅ Use custom topBar if available
                 Expanded(child: child),
               ],
             ),

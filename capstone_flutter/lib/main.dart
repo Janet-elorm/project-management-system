@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
        '/': (context) => LoginPage(),
-        //'/': (context) => DashboardPage(),
+      //'/': (context) => DashboardPage(),
         // Remove the direct route to TaskManagerPage since it needs arguments
       },
       onGenerateRoute: (settings) {
@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
           );
         }
         return MaterialPageRoute(
-          builder: (context) => LoginPage(),
+         builder: (context) => LoginPage(),
          //builder: (context) => DashboardPage(),
         );
       },

@@ -70,7 +70,8 @@ def get_project(db: Session, project_id: int):
 
 def get_projects(db: Session):
     try:
-        return db.query(models.Project).all()  # Get ALL projects
+          projects = db.query(models.Project).options(joinedload(models.Project.creator)).all()
+          return [project_to_dict(p) for p in projects] # Get ALL projects
     except Exception as e:
         raise Exception(f"Error fetching projects: {str(e)}")
     
@@ -92,6 +93,20 @@ def create_project(db: Session, project: schemas.ProjectCreate, creator_id: int)
     except Exception as e:
         db.rollback()
         raise Exception(f"Error creating project: {str(e)}")
+    
+def project_to_dict(project):
+    return {
+        "project_id": project.project_id,
+        "title": project.title,
+        "project_description": project.project_description,
+        "workspace": project.workspace,
+        "progress": float(project.progress or 0),
+        "team_count": project.team_count or 0,
+        "creator_name": f"{project.creator.first_name} {project.creator.last_name}" if project.creator else "Unknown",
+        "team_members": [],  # You can include real data here too if needed
+        "created_at": project.created_at.isoformat() if project.created_at else None
+    }
+
 
 def update_project_progress(db: Session, project_id: int, progress: float):
     try:

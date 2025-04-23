@@ -3,23 +3,6 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from db import Base  # Import the Base from your db connection
 
-
-# class Project(Base):
-#     __tablename__ = "Projects"
-
-#     project_id = Column(Integer, primary_key=True, autoincrement=True)
-#     title = Column(String(255), nullable=False)
-#     project_description = Column(String(200), nullable=True)  # Correct field name
-#     workspace = Column(String(255), nullable=True)
-#     team_count = Column(Integer, nullable=True)
-#     progress = Column(DECIMAL(5, 2), nullable=True)
-#     creator_id = Column(Integer, ForeignKey("Users.user_id"))
-#     created_at = Column(DateTime, server_default=func.now())  # Fixed
-
-#     tasks = relationship("Task", back_populates="project")
-#     team_members = relationship("ProjectTeam", back_populates="project")
-#     creator = relationship("User", back_populates="projects")
-
 class Project(Base):
     __tablename__ = "Projects"
 
@@ -36,21 +19,6 @@ class Project(Base):
     team_members = relationship("ProjectTeam", back_populates="project")
     creator = relationship("User", back_populates="created_projects")  # Note the back_populates name
 
-# class User(Base):
-#     __tablename__ = "Users"
-
-#     user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-#     first_name = Column(String(50), nullable=False)  # Added
-#     last_name = Column(String(50), nullable=False)   # Added
-#     email = Column(String(100), unique=True, nullable=False)  # Fixed size
-#     phone_no = Column(String(15), unique=True, nullable=False)  # Added
-#     password = Column(String(255), nullable=False)  # Added for authentication
-#     profile_picture = Column(String(255), nullable=True)  # Store image URL
-#     created_at = Column(DateTime, server_default=func.now())
-
-#     assignments = relationship("UserAssignment", back_populates="user")
-#     projects = relationship("ProjectTeam", back_populates="user")
-#     projects = relationship("Project", back_populates="creator")
 
 class User(Base):
     __tablename__ = "Users"
