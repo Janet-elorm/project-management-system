@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-       '/': (context) => LoginPage(),
+      '/': (context) => LoginPage(),
       //'/': (context) => DashboardPage(),
         // Remove the direct route to TaskManagerPage since it needs arguments
       },

@@ -131,7 +131,7 @@ class _TaskManagerPageState extends State<TaskManagerPage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const ProjectsPage()),
+                          builder: (context) => ProjectsPage(projectId: widget.projectId)),
                     );
                   },
                 ),

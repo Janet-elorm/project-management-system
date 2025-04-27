@@ -323,7 +323,7 @@ class _TopBarState extends State<TopBar> {
                   controller: controller,
                   focusNode: focusNode,
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8.0),
                       borderSide: BorderSide(color: Colors.grey[300]!),
@@ -358,7 +358,7 @@ class _TopBarState extends State<TopBar> {
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 200),
+                      constraints: const BoxConstraints(maxHeight: 160),
                       child: ListView.builder(
                         padding: EdgeInsets.zero,
                         shrinkWrap: true,

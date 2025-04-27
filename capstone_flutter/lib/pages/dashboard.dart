@@ -161,16 +161,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Add Members:'),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () {
-                          // TODO: Implement add members functionality later
-                          print("Add members button pressed");
-                        },
-                      ),
-                    ],
+                    
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -245,7 +236,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 projectId: widget.projectId ?? 0) // Use widget.projectId
             : page == "Progress Tracker"
                 ? ProgressTrackingPage(projectId: widget.projectId ?? 0,)
-                : const ProjectsPage(),
+                : ProjectsPage(projectId: widget.projectId ?? 0),
       ),
     );
   }
@@ -295,7 +286,6 @@ Widget build(BuildContext context) {
             _buildDashboardCard(
               title: "Total Projects",
               value: "${dashboardData?['total_projects'] ?? 0}",
-              percentageChange: "76% Up this month",
               lineColor: Colors.blue,
               icon: Icons.folder_open,
             ),
@@ -303,7 +293,6 @@ Widget build(BuildContext context) {
             _buildDashboardCard(
               title: "Total Tasks",
               value: "${dashboardData?['total_tasks'] ?? 0}",
-              percentageChange: "13% Up this month",
               lineColor: Colors.orange,
               icon: Icons.list_alt,
             ),
@@ -311,7 +300,6 @@ Widget build(BuildContext context) {
             _buildDashboardCard(
               title: "Assigned Tasks",
               value: "${dashboardData?['assigned_tasks'] ?? 0}",
-              percentageChange: "23% Down this month",
               lineColor: Colors.purple,
               icon: Icons.person,
             ),
@@ -319,7 +307,6 @@ Widget build(BuildContext context) {
             _buildDashboardCard(
               title: "Overdue Tasks",
               value: "${dashboardData?['overdue_tasks'] ?? 0}",
-              percentageChange: "14% Up this month",
               lineColor: Colors.red,
               icon: Icons.access_time,
             ),
@@ -327,7 +314,6 @@ Widget build(BuildContext context) {
             _buildDashboardCard(
               title: "Completed Tasks",
               value: "${dashboardData?['completed_tasks'] ?? 0}",
-              percentageChange: "35% Down this month",
               lineColor: Colors.green,
               icon: Icons.check_circle_outline,
             ),
@@ -354,15 +340,14 @@ Widget build(BuildContext context) {
   Widget _buildDashboardCard({
     required String title,
     required String value,
-    required String percentageChange,
     required Color lineColor,
     required IconData icon,
   }) {
     return Expanded(
       child: SizedBox(
-        height: 103,
+        height: 89,
         child: Card(
-          color: Colors.white,
+          color: const Color.fromARGB(255, 245, 246, 249),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
           elevation: 3,
@@ -384,8 +369,7 @@ Widget build(BuildContext context) {
                     Text(title,
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 12)),
-                    Text(percentageChange,
-                        style: TextStyle(fontSize: 10, color: Colors.green)),
+                    
                   ],
                 ),
               ),
@@ -427,7 +411,7 @@ Widget _buildTaskTabs() {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color.fromARGB(255, 201, 210, 218)
+                ? const Color.fromARGB(255, 218, 222, 228)
                 : Colors.grey.shade200,
             borderRadius: BorderRadius.circular(10),
           ),
@@ -473,7 +457,7 @@ Widget _buildAssignedTasksSection() {
       Card(
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: Colors.white,
+        color: const Color.fromARGB(255, 245, 246, 249),
         child: SizedBox(
           height: 320, // match Project Overview card height
           child: Padding(
@@ -534,7 +518,7 @@ Widget _buildAssignedTasksSection() {
         ),
         const SizedBox(height: 8),
         Card(
-          color: Colors.white,
+          color: const Color.fromARGB(255, 245, 246, 249),
           elevation: 3,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -558,7 +542,7 @@ Widget _buildAssignedTasksSection() {
                           _showCreateProjectPopupMenu(context);
                         }, // Add project creation functionality
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
+                          backgroundColor: const Color.fromARGB(255, 245, 246, 249),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                             side: const BorderSide(color: Colors.black12),
@@ -637,7 +621,8 @@ Widget _buildAssignedTasksSection() {
             elevation: 2,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            color: Colors.white,
+            color: const Color.fromARGB(255, 245, 246, 249),
+
             child: SizedBox(
               height: 180,
               child: Padding(
@@ -767,7 +752,7 @@ Widget _buildAssignedTasksSection() {
   Widget _buildTaskCard(String title, String category, String dueDate,
     String priority, double progress) {
   return Card(
-    color: Colors.white,
+    color: const Color.fromARGB(255, 245, 246, 249),
     elevation: 2,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     child: SizedBox(

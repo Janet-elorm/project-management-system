@@ -14,7 +14,7 @@ class MainLayout extends StatelessWidget {
     required this.selectedPage,
     required this.child,
     required this.onPageSelected,
-    this.backgroundColor = Colors.white,
+    this.backgroundColor = const Color.fromARGB(255, 240, 241, 244),
     this.topBar, // ✅ Receive topBar
   }) : super(key: key);
 

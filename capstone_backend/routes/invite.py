@@ -39,7 +39,7 @@ def invite_user(
     invite_entry = crud.create_invite(db, project_id, invite.email)
 
     # Generate invite link
-    invite_link = f"http://localhost:51056/invite/projects/accept-invite?token={invite_entry.token}&projectId={project_id}"
+    invite_link = f"http://localhost:63972/invite/projects/accept-invite?token={invite_entry.token}&projectId={project_id}"
 
     # Send email
     sender_email = os.getenv("SMTP_EMAIL")
@@ -65,3 +65,24 @@ def accept_invite(token: str, db: Session = Depends(get_db)):
 
     return {"message": "You have successfully joined the project"}
 
+@invite_router.post("/projects/{project_id}/add_member")
+def add_member_to_project(
+    project_id: int,
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    project = db.query(models.Project).filter(models.Project.project_id == project_id).first()
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+
+    if not project or not user:
+        raise HTTPException(status_code=404, detail="Project or user not found")
+
+    # Prevent duplicates
+    existing = db.query(models.ProjectTeam).filter_by(project_id=project_id, user_id=user_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="User already in project")
+
+    new_assignment = models.ProjectTeam(project_id=project_id, user_id=user_id)
+    db.add(new_assignment)
+    db.commit()
+    return {"message": "User added to project"}

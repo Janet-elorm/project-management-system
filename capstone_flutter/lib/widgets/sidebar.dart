@@ -36,9 +36,7 @@ class _SidebarState extends State<Sidebar> {
         isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
       debugPrint("Failed to fetch projects: $e");
     }
   }
@@ -47,177 +45,177 @@ class _SidebarState extends State<Sidebar> {
   Widget build(BuildContext context) {
     return Container(
       width: 250,
-      color: const Color(0xFFF5F5F5),
+      color: const Color.fromARGB(255, 218, 222, 228),
       child: ListView(
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.symmetric(vertical: 24, horizontal: 12),
         children: [
-          // Logo with tighter padding
+          // Logo
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12), // Reduced bottom padding
+            padding: const EdgeInsets.only(bottom: 24),
             child: Image.asset(
               'assets/onboard-removebg-preview.png',
-              height: 36, // Slightly reduced height
+              height: 40,
               alignment: Alignment.centerLeft,
             ),
           ),
 
-          // Navigation Section
-          _buildSectionHeader('NAVIGATION'),
-          _buildNavItem(
-            title: 'Dashboard',
-            icon: Icons.home_outlined,
-            isSelected: widget.selectedPage == 'Dashboard',
-          ),
-          _buildNavItem(
-            title: 'Progress Tracker',
-            icon: Icons.timeline_outlined,
-            isSelected: widget.selectedPage == 'Progress Tracker',
-          ),
+          _buildSectionTitle('NAVIGATION'),
+          _buildNavItem('Dashboard', Icons.home_outlined),
+          _buildNavItem('Progress Tracker', Icons.timeline_outlined),
 
-          // Projects Section
-          _buildSectionHeader('PROJECTS'),
-          _buildProjectHeader(),
+          const SizedBox(height: 24),
+          _buildSectionTitle('PROJECTS'),
+          _buildProjectsHeader(),
+
           if (isProjectsExpanded) ...[
-            if (isLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0), // Reduced padding
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else
-              ..._buildProjectList(),
-          ],
-        ],
+  if (isLoading)
+    const Padding(
+      padding: EdgeInsets.symmetric(vertical: 8.0),
+      child: Center(child: CircularProgressIndicator()),
+    )
+  else
+    ..._buildProjectList(), // ✅ Add the three dots here
+],
+        ]
+
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4), // Reduced top padding
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: Colors.grey.shade600,
+          color: Colors.grey.shade500,
           letterSpacing: 0.5,
         ),
       ),
     );
   }
 
-  Widget _buildNavItem({
-    required String title,
-    required IconData icon,
-    required bool isSelected,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), // Reduced vertical padding
-      minVerticalPadding: 0, // Removes extra vertical padding
-      dense: true, // Makes the ListTile more compact
-      horizontalTitleGap: 2, // Reduced gap between icon and text
-      leading: Icon(
-        icon,
-        size: 18, // Slightly smaller icon
-        color: isSelected ? Colors.blue : Colors.grey.shade700,
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 13, // Slightly smaller font
-          color: isSelected ? Colors.blue : Colors.black,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+  Widget _buildNavItem(String title, IconData icon) {
+    bool selected = widget.selectedPage == title;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: selected
+          ? BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                )
+              ],
+            )
+          : null,
+      child: ListTile(
+        dense: true,
+        leading: Icon(
+          icon,
+          size: 20,
+          color: selected ? Colors.blueGrey : Colors.grey.shade700,
         ),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            color: selected ? Colors.blueGrey : Colors.black,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () => widget.onPageSelected(title),
       ),
-      onTap: () => widget.onPageSelected(title),
     );
   }
 
-  Widget _buildProjectHeader() {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0), // Tight vertical padding
-      minVerticalPadding: 0,
-      dense: true,
-      horizontalTitleGap: 2,
-      leading: Icon(
-        isProjectsExpanded ? Icons.folder_open : Icons.folder,
-        size: 18,
-        color: Colors.grey.shade700,
-      ),
-      title: const Text(
-        'All Projects',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
+  Widget _buildProjectsHeader() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => setState(() => isProjectsExpanded = !isProjectsExpanded),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isProjectsExpanded ? Icons.folder_open : Icons.folder,
+              size: 18,
+              color: Colors.grey.shade600,
+            ),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'All Projects',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              isProjectsExpanded ? Icons.expand_less : Icons.expand_more,
+              size: 18,
+              color: Colors.grey.shade600,
+            )
+          ],
         ),
       ),
-      trailing: IconButton(
-        icon: Icon(
-          isProjectsExpanded ? Icons.expand_less : Icons.expand_more,
-          size: 18,
-        ),
-        onPressed: () {
-          setState(() => isProjectsExpanded = !isProjectsExpanded);
-        },
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints(),
-      ),
-      onTap: () => widget.onPageSelected('Projects'),
     );
   }
 
- List<Widget> _buildProjectList() {
-  return projects.map((project) {
-    return ListTile(
-      contentPadding: const EdgeInsets.fromLTRB(24, 0, 4, 0),
-      minVerticalPadding: 0,
-      dense: true,
-      horizontalTitleGap: 2,
-      leading: const Icon(
-        Icons.folder_outlined,
-        size: 18,
-        color: Colors.grey,
-      ),
-      title: Text(
-        project.title,
-        style: const TextStyle(fontSize: 13),
-      ),
-      trailing: PopupMenuButton<String>(
-        icon: const Icon(Icons.more_vert, size: 16, color: Colors.grey),
-        onSelected: (value) {
-          if (value == 'tasks') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TaskManagerPage(
-                  projectId: project.projectId,
-                ),
-              ),
-            );
-          } else if (value == 'progress') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProgressTrackingPage(
-                  projectId: project.projectId,
-                ),
-              ),
-            );
-          }
-        },
-        itemBuilder: (context) => [
-          const PopupMenuItem(
-            value: 'tasks',
-            child: Text('Manage Tasks'),
+  List<Widget> _buildProjectList() {
+    return projects.map((project) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: ListTile(
+          dense: true,
+          leading: const Icon(Icons.folder_outlined, size: 18, color: Colors.grey),
+          title: Text(
+            project.title,
+            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
-          const PopupMenuItem(
-            value: 'progress',
-            child: Text('View Progress'),
+          trailing: PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, size: 16, color: Colors.grey),
+            onSelected: (value) {
+              if (value == 'tasks') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TaskManagerPage(projectId: project.projectId),
+                  ),
+                );
+              } else if (value == 'progress') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProgressTrackingPage(projectId: project.projectId),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'tasks', child: Text('Manage Tasks')),
+              const PopupMenuItem(value: 'progress', child: Text('View Progress')),
+            ],
           ),
-        ],
-      ),
-    );
-  }).toList();
-}
-
+        ),
+      );
+    }).toList();
+  }
 }

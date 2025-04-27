@@ -7,6 +7,8 @@ import jwt
 from datetime import datetime
 from sqlalchemy.orm import joinedload
 import uuid
+import asyncio
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -100,26 +102,30 @@ def project_to_dict(project):
         "title": project.title,
         "project_description": project.project_description,
         "workspace": project.workspace,
-        "progress": float(project.progress or 0),
-        "team_count": project.team_count or 0,
-        "creator_name": f"{project.creator.first_name} {project.creator.last_name}" if project.creator else "Unknown",
-        "team_members": [],  # You can include real data here too if needed
-        "created_at": project.created_at.isoformat() if project.created_at else None
+        "team_count": len(project.team_members),  # ✅ calculated dynamically
+        "progress": float(project.progress or 0) if project.progress is not None else 0.0,
+        "creator_name": f"{project.creator.first_name} {project.creator.last_name}" if project.creator else None,
+        "creator_id": project.creator_id
     }
 
 
-def update_project_progress(db: Session, project_id: int, progress: float):
+
+async def update_project_progress(db: Session, project_id: int, progress: float):
     try:
         project = db.query(models.Project).filter(models.Project.project_id == project_id).first()
         if not project:
             raise Exception(f"Project with ID {project_id} not found")
-        project.progress = progress
+        project.progress = progress  # ✅ Fix: use the argument passed in
         db.commit()
+        
+        await broadcast_progress_update(project_id, progress)
+
         db.refresh(project)
         return project
     except Exception as e:
         db.rollback()
         raise Exception(f"Error updating project progress: {str(e)}")
+
 
 # CRUD for Tasks
 def get_tasks(db: Session):
@@ -408,4 +414,5 @@ def get_project_team_with_users(db: Session, project_id: int):
         ]
     except Exception as e:
         raise Exception(f"Error fetching project team: {str(e)}")
+
 

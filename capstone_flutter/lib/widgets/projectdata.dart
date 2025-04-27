@@ -75,7 +75,7 @@ Future<List<Project>> fetchProjectsWithCreators() async {
   final token = prefs.getString('auth_token');
 
   final response = await http.get(
-    Uri.parse('http://127.0.0.1:8000/dashboard/projects/all'),
+    Uri.parse('http://127.0.0.1:8000/dashboard/projects/user'),
     headers: {
       'Authorization': 'Bearer $token',
     },
@@ -250,5 +250,23 @@ Future<void> deleteProject(int projectId) async {
   } else {
     print("❌ Failed to delete project: ${response.body}");
     throw Exception('Failed to delete project');
+  }
+}
+
+
+Future<double> fetchProjectProgress(int projectId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('auth_token');
+
+  final response = await http.get(
+    Uri.parse('http://127.0.0.1:8000/dashboard/projects/$projectId/calculate_progress'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (response.statusCode == 200) {
+    final json = jsonDecode(response.body);
+    return (json['progress'] as num).toDouble();
+  } else {
+    throw Exception('Failed to fetch project progress: ${response.body}');
   }
 }

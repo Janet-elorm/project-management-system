@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, HttpUrl 
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
@@ -37,6 +37,13 @@ class TaskRead(TaskCreate):
 
     class Config:
         from_attributes = True
+        
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    progress: Optional[float] = None
+    due_date: Optional[str] = None  # format: 'YYYY-MM-DD'
+
 
 # Schema for creating a user
 class UserCreate(BaseModel):
@@ -145,7 +152,15 @@ class ProjectRead(BaseModel):
     workspace: Optional[str] = None
     team_count: Optional[int] = None
     progress: Optional[float] = None
+    creator_name: Optional[str] = None
+    creator_id: Optional[int] = None
 
     class Config:
         from_attributes = True
 
+class TaskCreateWithAssignments(BaseModel):
+    title: str
+    category: Optional[str] = None
+    due_date: Optional[str] = None 
+    priority: str
+    user_ids: List[int]  # 👈 users to assign
