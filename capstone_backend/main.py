@@ -8,6 +8,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.openapi.models import OAuthFlowPassword
 from fastapi.security import OAuth2PasswordBearer
+from fastapi import WebSocket
+from routes.dashboard import websocket_endpoint
 
 
 # Create tables
@@ -44,3 +46,8 @@ def home():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.websocket("/dashboard/ws/progress/{project_id}")
+async def websocket_route(websocket: WebSocket, project_id: int):
+    await websocket_endpoint(websocket, project_id)

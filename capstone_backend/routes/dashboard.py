@@ -8,7 +8,8 @@ from sqlalchemy.orm import joinedload
 from crud import project_to_dict
 from fastapi.encoders import jsonable_encoder
 from crud import update_project_progress  
-from schemas import TaskUpdate, TaskCreateWithAssignments
+from schemas import TaskUpdate, TaskCreateWithAssignments  # make sure you import it
+from fastapi import BackgroundTasks
 
 router = APIRouter()
 
@@ -68,8 +69,28 @@ def update_project_progress(project_id: int, progress: float, db: Session = Depe
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+# @router.put("/tasks/{task_id}/category")
+# def update_task_category(task_id: int, category: str, db: Session = Depends(get_db)):
+#     try:
+#         task = db.query(models.Task).filter(models.Task.task_id == task_id).first()
+#         if not task:
+#             raise HTTPException(status_code=404, detail="Task not found")
+
+#         task.category = category
+#         if category == "Completed":
+#             task.progress = 1.0  # ✅ Ensure progress reflects completion
+
+#         db.commit()
+#         return {"message": "Category updated"}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
 @router.put("/tasks/{task_id}/category")
-def update_task_category(task_id: int, category: str, db: Session = Depends(get_db)):
+async def update_task_category(
+    task_id: int,
+    category: str,
+    db: Session = Depends(get_db),
+):
     try:
         task = db.query(models.Task).filter(models.Task.task_id == task_id).first()
         if not task:
@@ -77,13 +98,23 @@ def update_task_category(task_id: int, category: str, db: Session = Depends(get_
 
         task.category = category
         if category == "Completed":
-            task.progress = 1.0  # ✅ Ensure progress reflects completion
+            task.progress = 1.0  # ✅ reflect progress
 
         db.commit()
+
+        # 🛠 Recalculate project progress
+        tasks = db.query(models.Task).filter(models.Task.project_id == task.project_id).all()
+        if tasks:
+            completed = sum(1 for t in tasks if t.progress is not None and t.progress >= 0.99)
+            project_progress = completed / len(tasks)
+
+            # 🛠 Now broadcast!
+            await broadcast_progress_update(task.project_id, project_progress)
+
         return {"message": "Category updated"}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/projects/{project_id}/calculate_progress")
 def calculate_project_progress(project_id: int, db: Session = Depends(get_db)):
