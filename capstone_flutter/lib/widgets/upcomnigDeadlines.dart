@@ -96,21 +96,21 @@ class UpcomingDeadlinesSection extends StatelessWidget {
   // Static data for now
   final List<dynamic> deadlines = [
     {
-      'title': 'Design Homepage',
+      'title': 'Build UI for homapage',
       'category': 'To Do',
-      'due_date': '2025-04-12',
+      'due_date': '2025-05-01',
       'priority': 'High',
     },
     {
-      'title': 'Develop Backend API',
+      'title': 'Print new signage',
       'category': 'In Progress',
-      'due_date': '2025-04-15',
+      'due_date': '2025-04-30',
       'priority': 'Medium',
     },
     {
       'title': 'Prepare Presentation',
       'category': 'Completed',
-      'due_date': '2025-04-10',
+      'due_date': '2025-05-10',
       'priority': 'Low',
     },
     {
@@ -142,7 +142,7 @@ class UpcomingDeadlinesSection extends StatelessWidget {
         Card(
           elevation: 3,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          color: Colors.white,
+          color: const Color.fromARGB(255, 245, 246, 249),
           child: SizedBox(
             height: 240, // adjust based on space
             child: Padding(

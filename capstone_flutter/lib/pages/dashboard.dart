@@ -37,9 +37,6 @@ class _DashboardPageState extends State<DashboardPage> {
   String _searchQuery = '';
   String? _creatorName;
 
-
-
-
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _workspaceController = TextEditingController();
@@ -51,18 +48,27 @@ class _DashboardPageState extends State<DashboardPage> {
     loadDashboardData();
     loadProjectsData();
     _loadAssignedTasks();
-     // _loadUpcomingDeadlines();
-      loadCurrentUser();
+    // _loadUpcomingDeadlines();
+    loadCurrentUser();
+    _loadProjects();
+  }
+
+  Future<void> _loadProjects() async {
+    final loadedProjects =
+        await fetchProjectsWithCreators(); // or your project fetching function
+    setState(() {
+      projects = loadedProjects;
+    });
   }
 
   Future<void> loadCurrentUser() async {
-  final userData = await AuthService().getCurrentUser();
-  if (userData != null) {
-    setState(() {
-      _creatorName = '${userData['first_name']} ${userData['last_name']}';
-    });
+    final userData = await AuthService().getCurrentUser();
+    if (userData != null) {
+      setState(() {
+        _creatorName = '${userData['first_name']} ${userData['last_name']}';
+      });
+    }
   }
-}
 
   Future<void> loadDashboardData() async {
     setState(() {
@@ -161,7 +167,6 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -201,7 +206,7 @@ class _DashboardPageState extends State<DashboardPage> {
           teamAvatars: [], // Provide an empty list if no avatars yet
           description: _descriptionController.text,
           creatorName: _creatorName ?? '-',
- // Description added
+          // Description added
         ));
       });
 
@@ -235,7 +240,9 @@ class _DashboardPageState extends State<DashboardPage> {
             ? TaskManagerPage(
                 projectId: widget.projectId ?? 0) // Use widget.projectId
             : page == "Progress Tracker"
-                ? ProgressTrackingPage(projectId: widget.projectId ?? 0,)
+                ? ProgressTrackingPage(
+                    projectId: widget.projectId ?? 0,
+                  )
                 : ProjectsPage(projectId: widget.projectId ?? 0),
       ),
     );
@@ -252,29 +259,26 @@ class _DashboardPageState extends State<DashboardPage> {
 //   }
 // }
 
-
+  
   @override
-@override
-Widget build(BuildContext context) {
-  return MainLayout(
-    selectedPage: selectedPage,
-    onPageSelected: handlePageSelected,
-    
-    child: SingleChildScrollView(
-      child: IntrinsicHeight(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : hasError || dashboardData == null
-                  ? const Center(child: Text("Failed to load data."))
-                  : _buildDashboardContent(),
+  Widget build(BuildContext context) {
+    return MainLayout(
+      selectedPage: selectedPage,
+      onPageSelected: handlePageSelected,
+      child: SingleChildScrollView(
+        child: IntrinsicHeight(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : hasError || dashboardData == null
+                    ? const Center(child: Text("Failed to load data."))
+                    : _buildDashboardContent(),
+          ),
         ),
       ),
-    ),
-    
-  );
-}
+    );
+  }
 
   Widget _buildDashboardContent() {
     return Column(
@@ -369,7 +373,6 @@ Widget build(BuildContext context) {
                     Text(title,
                         style:
                             const TextStyle(color: Colors.grey, fontSize: 12)),
-                    
                   ],
                 ),
               ),
@@ -389,124 +392,125 @@ Widget build(BuildContext context) {
     );
   }
 
-Widget _buildTaskTabs() {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.end, // aligns tabs to the right
-    children: List.generate(_taskTabs.length * 2 - 1, (index) {
-      if (index.isOdd) {
-        // Insert spacing between tab buttons
-        return const SizedBox(width: 8);
+  Widget _buildTaskTabs() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end, // aligns tabs to the right
+      children: List.generate(_taskTabs.length * 2 - 1, (index) {
+        if (index.isOdd) {
+          // Insert spacing between tab buttons
+          return const SizedBox(width: 8);
+        }
+
+        int tabIndex = index ~/ 2;
+        final isSelected = tabIndex == _selectedTabIndex;
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedTabIndex = tabIndex;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? const Color.fromARGB(255, 218, 222, 228)
+                  : Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              _taskTabs[tabIndex],
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.normal,
+                color: isSelected ? Colors.white : Colors.black,
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildAssignedTasksSection() {
+    // Filter assigned tasks based on selected tab
+    List filteredTasks = assignedTasks.where((task) {
+      final category = task['category']?.toLowerCase() ?? "";
+      switch (_selectedTabIndex) {
+        case 0: // To Do
+          return category == "to do";
+        case 1: // Completed
+          return category == "completed";
+        case 2: // In Progress
+          return category == "in progress";
+        default:
+          return false;
       }
+    }).toList();
 
-      int tabIndex = index ~/ 2;
-      final isSelected = tabIndex == _selectedTabIndex;
-
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedTabIndex = tabIndex;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color.fromARGB(255, 218, 222, 228)
-                : Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            _taskTabs[tabIndex],
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.normal,
-              color: isSelected ? Colors.white : Colors.black,
-            ),
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Assigned Tasks',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
-      );
-    }),
-  );
-}
-
-
-Widget _buildAssignedTasksSection() {
-  // Filter assigned tasks based on selected tab
-  List filteredTasks = assignedTasks.where((task) {
-    final category = task['category']?.toLowerCase() ?? "";
-    switch (_selectedTabIndex) {
-      case 0: // To Do
-        return category == "to do";
-      case 1: // Completed
-        return category == "completed";
-      case 2: // In Progress
-        return category == "in progress";
-      default:
-        return false;
-    }
-  }).toList();
-
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const Text(
-        'Assigned Tasks',
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-      ),
-      const SizedBox(height: 8),
-      Card(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        color: const Color.fromARGB(255, 245, 246, 249),
-        child: SizedBox(
-          height: 320, // match Project Overview card height
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Your Tasks", style: TextStyle(fontSize: 12)),
-                    _buildTaskTabs(),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: filteredTasks.isEmpty
-                      ? const Center(child: Text("No tasks in this category."))
-                      : GridView.builder(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, // 2 cards per row
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 2, // Adjust this for card proportions
+        const SizedBox(height: 8),
+        Card(
+          elevation: 3,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: const Color.fromARGB(255, 245, 246, 249),
+          child: SizedBox(
+            height: 320, // match Project Overview card height
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Your Tasks", style: TextStyle(fontSize: 12)),
+                      _buildTaskTabs(),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filteredTasks.isEmpty
+                        ? const Center(
+                            child: Text("No tasks in this category."))
+                        : GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2, // 2 cards per row
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio:
+                                  2, // Adjust this for card proportions
+                            ),
+                            itemCount: filteredTasks.length,
+                            itemBuilder: (context, index) {
+                              final task = filteredTasks[index];
+                              return _buildTaskCard(
+                                task['title'] ?? 'No title',
+                                task['category'] ?? 'No category',
+                                task['due_date']?.toString() ?? 'No due date',
+                                task['priority'] ?? 'Medium',
+                                task['progress']?.toDouble() ?? 0.0,
+                              );
+                            },
                           ),
-                          itemCount: filteredTasks.length,
-                          itemBuilder: (context, index) {
-                            final task = filteredTasks[index];
-                            return _buildTaskCard(
-                              task['title'] ?? 'No title',
-                              task['category'] ?? 'No category',
-                              task['due_date']?.toString() ?? 'No due date',
-                              task['priority'] ?? 'Medium',
-                              task['progress']?.toDouble() ?? 0.0,
-                            );
-                          },
-                        ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    ],
-  );
-}
-
-
+      ],
+    );
+  }
 
   Widget buildProjectOverview() {
     return Column(
@@ -542,7 +546,8 @@ Widget _buildAssignedTasksSection() {
                           _showCreateProjectPopupMenu(context);
                         }, // Add project creation functionality
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromARGB(255, 245, 246, 249),
+                          backgroundColor:
+                              const Color.fromARGB(255, 245, 246, 249),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                             side: const BorderSide(color: Colors.black12),
@@ -579,7 +584,6 @@ Widget _buildAssignedTasksSection() {
                         itemCount: projects.length,
                         itemBuilder: (context, index) {
                           return buildProjectCard(projects[index]);
-                          
                         },
                       ),
                     ),
@@ -589,10 +593,8 @@ Widget _buildAssignedTasksSection() {
           ),
         ),
       ],
-      
     );
   }
-
 
   Widget buildProjectCard(Project project) {
     return MouseRegion(
@@ -622,95 +624,106 @@ Widget _buildAssignedTasksSection() {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             color: const Color.fromARGB(255, 245, 246, 249),
-
             child: SizedBox(
               height: 180,
               child: Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            project.title,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'manage_members') {
-                              showDialog(
-                                context: context,
-                                builder: (context) =>
-                                    ManageMembersPopup(project: project),
-                              );
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'manage_members',
-                              child: Text('Manage Members'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'edit_project',
-                              child: Text('Edit Project'),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete_project',
-                              child: Text('Delete Project'),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      project.workspace,
-                      style: const TextStyle(fontSize: 10, color: Colors.grey),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.chat_bubble_outline,
-                            size: 12, color: Colors.grey),
-                        const SizedBox(width: 4),
-                        Text("${project.teamCount}/8",
-                            style: const TextStyle(fontSize: 10)),
-                        const Spacer(),
-                        ...project.teamAvatars
-                            .map((avatar) => buildAvatar(avatar)),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Stack(
-                      alignment: Alignment.centerRight,
-                      children: [
-                        LinearProgressIndicator(
-                          value: project.progress,
-                          backgroundColor: Colors.grey[300],
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.purple),
-                          minHeight: 3,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 4),
-                          child: Text("${(project.progress * 100).toInt()}%",
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              project.title,
                               style: const TextStyle(
-                                  fontSize: 10, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'manage_members') {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) =>
+                                      ManageMembersPopup(project: project),
+                                );
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'manage_members',
+                                child: Text('Manage Members'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'edit_project',
+                                child: Text('Edit Project'),
+                              ),
+                              const PopupMenuItem(
+                                value: 'delete_project',
+                                child: Text('Delete Project'),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        project.workspace,
+                        style:
+                            const TextStyle(fontSize: 10, color: Colors.grey),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.group, size: 12, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text("${project.teamCount}",
+                              style: const TextStyle(fontSize: 10)),
+                          const Spacer(),
+                          ...project.teamAvatars
+                              .map((avatar) => buildAvatar(avatar)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 8,
+                            child: Container(
+                              padding: const EdgeInsets.only(
+                                  right: 8), // small gap between bar and %
+                              child: LinearProgressIndicator(
+                                value: project.progress,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color.fromARGB(255, 151, 167, 186),
+                                ),
+                                minHeight: 3,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2, // 30% of space
+                            child: Text(
+                              "${(project.progress * 100).toInt()}%",
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromARGB(255, 88, 88, 88),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ]),
               ),
             ),
           ),
@@ -749,46 +762,45 @@ Widget _buildAssignedTasksSection() {
     }
   }
 
-  Widget _buildTaskCard(String title, String category, String dueDate,
-    String priority, double progress) {
-  return Card(
-    color: const Color.fromARGB(255, 245, 246, 249),
-    elevation: 2,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-    child: SizedBox(
-      height: 80,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(title,
-                      style: const TextStyle(
-                          fontSize: 10, fontWeight: FontWeight.bold)),
-                ),
-                _buildPriorityBadge(priority),
-              ],
-            ),
-            Text('$category',
-                style: const TextStyle(fontSize: 10, color: Colors.grey)),
-            Text('Due: $dueDate', style: const TextStyle(fontSize: 10)),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Color(0xFFF5F5F5),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                  Color.fromARGB(255, 201, 210, 218)),
-              minHeight: 5,
-            ),
-          ],
+  Widget _buildTaskCard(String title, String projectTitle, String dueDate,
+      String priority, double progress) {
+    return Card(
+      color: const Color.fromARGB(255, 245, 246, 249),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: SizedBox(
+        height: 80,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(title,
+                        style: const TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                  _buildPriorityBadge(priority),
+                ],
+              ),
+              Text('$projectTitle',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              Text('Due: $dueDate', style: const TextStyle(fontSize: 10)),
+              LinearProgressIndicator(
+                value: progress,
+                backgroundColor: Color(0xFFF5F5F5),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                    Color.fromARGB(255, 201, 210, 218)),
+                minHeight: 5,
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-  
-}
+    );
+  }
 }

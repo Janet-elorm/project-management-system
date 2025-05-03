@@ -279,7 +279,7 @@ class _TopBarState extends State<TopBar> {
         children: [
           // Universal Search Bar
           SizedBox(
-            width: 400,
+            width: 800,
             child: Autocomplete<SearchResult>(
               optionsBuilder: (TextEditingValue textEditingValue) {
                 if (textEditingValue.text.isEmpty) {
@@ -334,7 +334,7 @@ class _TopBarState extends State<TopBar> {
                     ),
                     filled: true,
                     fillColor: const Color(0xFFF5F5F5),
-                    hintText: "Search projects, tasks, users...",
+                    hintText: "Search projects, tasks...",
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     suffixIcon: isSearching 
                         ? const Padding(

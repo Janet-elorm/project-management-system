@@ -62,6 +62,7 @@ class _SidebarState extends State<Sidebar> {
           _buildSectionTitle('NAVIGATION'),
           _buildNavItem('Dashboard', Icons.home_outlined),
           _buildNavItem('Progress Tracker', Icons.timeline_outlined),
+          _buildNavItem('Task Manager', Icons.task_outlined),
 
           const SizedBox(height: 24),
           _buildSectionTitle('PROJECTS'),
@@ -135,47 +136,55 @@ class _SidebarState extends State<Sidebar> {
       ),
     );
   }
-
-  Widget _buildProjectsHeader() {
-    return InkWell(
+Widget _buildProjectsHeader() {
+  return Container(
+    margin: const EdgeInsets.symmetric(vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(
+      color: Colors.white,
       borderRadius: BorderRadius.circular(8),
-      onTap: () => setState(() => isProjectsExpanded = !isProjectsExpanded),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      children: [
+        const Icon(
+          Icons.folder_outlined,
+          size: 18,
+          color: Colors.grey,
         ),
-        child: Row(
-          children: [
-            Icon(
-              isProjectsExpanded ? Icons.folder_open : Icons.folder,
-              size: 18,
-              color: Colors.grey.shade600,
-            ),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'All Projects',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
-                ),
-                overflow: TextOverflow.ellipsis,
+        const SizedBox(width: 8),
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              // 👇 Navigate to ProjectsPage
+              widget.onPageSelected('Projects');
+            },
+            child: const Text(
+              'All Projects',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
               ),
+              overflow: TextOverflow.ellipsis,
             ),
-            Icon(
-              isProjectsExpanded ? Icons.expand_less : Icons.expand_more,
-              size: 18,
-              color: Colors.grey.shade600,
-            )
-          ],
+          ),
         ),
-      ),
-    );
-  }
+        GestureDetector(
+          onTap: () {
+            // 👇 Only collapse/expand when clicking the icon
+            setState(() => isProjectsExpanded = !isProjectsExpanded);
+          },
+          child: Icon(
+            isProjectsExpanded ? Icons.expand_less : Icons.expand_more,
+            size: 18,
+            color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 
   List<Widget> _buildProjectList() {
     return projects.map((project) {

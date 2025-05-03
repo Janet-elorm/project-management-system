@@ -443,6 +443,7 @@ def get_assigned_tasks_for_user(
                 "due_date": t.due_date.isoformat() if t.due_date else "N/A",
                 "priority": t.priority,
                 "progress": t.progress,
+                
             }
             for t in assigned_tasks
         ]

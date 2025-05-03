@@ -6,7 +6,10 @@ import 'package:capstone_flutter/pages/dashboard.dart';
 import 'package:capstone_flutter/pages/projects.dart';
 import 'package:flutter/material.dart';
 import 'package:capstone_flutter/widgets/mainLayout.dart';
+import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
+
+final Random _random = Random();
 
 class ProgressTrackingPage extends StatefulWidget {
   final int projectId;
@@ -172,98 +175,84 @@ Widget build(BuildContext context) {
       ),
     );
   }
+Widget _buildRecentActivities() {
+    List<String> actions = ["completed", "edited", "added", "deleted"];
+    List<Map<String, String>> activities = [
+      {"name": "Constance", "task": "Social Media Publicity", "time": "1 hour ago"},
+      {"name": "Elorm", "task": "Build UI for homepage", "time": "2 hours ago"},
+      {"name": "Olivia", "task": "Print new signage", "time": "3 hours ago"},
+      {"name": "Elorm", "task": "Conduct final user testing", "time": "5 hours ago"},
+      {"name": "Constance", "task": "Update product pages", "time": "7 hours ago"},
+      {"name": "Elorm", "task": "Define app requirements", "time": "12 hours ago"},
+    ];
 
-  Widget _buildRecentActivities() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Recent Activities",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ...List.generate(6, (index) => _buildActivityTile()),
+          Text("Recent Activities", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          SizedBox(height: 12),
+          ...activities.map((activity) {
+            String action = actions[_random.nextInt(actions.length)];
+            return ListTile(
+              leading: Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
+              title: Text("${activity['name']} $action '${activity['task']}'", style: TextStyle(fontSize: 13)),
+              subtitle: Text(activity['time']!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+            );
+          })
         ],
       ),
-    );
-  }
-
-  Widget _buildActivityTile() {
-    return ExpansionTile(
-      leading:
-          const Icon(Icons.check_circle, color: Color.fromARGB(255, 0, 0, 0)),
-      title: const Text("John completed 'UI Design'",
-          style: TextStyle(fontSize: 14)),
-      subtitle: const Text("2 hours ago"),
-      children: const [
-        Padding(
-          padding: EdgeInsets.all(12.0),
-          child: Text("Details about the activity can be shown here."),
-        ),
-      ],
     );
   }
 
   Widget _buildTeamProgress() {
+    List<Map<String, dynamic>> teamMembers = [
+      {"name": "Constance Antwi", "tasks": "5/7", "overdue": "1", "progress": 0.71},
+      {"name": "Olivia Mawuena", "tasks": "4/6", "overdue": "0", "progress": 0.66},
+      {"name": "Elorm Ashigbui", "tasks": "4/9", "overdue": "0", "progress": 0.44},
+    ];
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Team Progress",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ...List.generate(6, (index) => _buildTeamMemberCard()),
+          Text("Team Progress", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          SizedBox(height: 12),
+          ...teamMembers.map((member) => Card(
+                color: Color(0xFFE8EEF1),
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                child: ListTile(
+                  leading: CircleAvatar(backgroundImage: NetworkImage('https://via.placeholder.com/150')),
+                  title: Text(member['name'], style: TextStyle(fontSize: 12)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      LinearProgressIndicator(
+                        value: member['progress'],
+                        backgroundColor: Colors.grey[300],
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueGrey),
+                        minHeight: 6,
+                      ),
+                      SizedBox(height: 4),
+                      Text("Tasks: ${member['tasks']} | Overdue: ${member['overdue']}", style: TextStyle(fontSize: 11))
+                    ],
+                  ),
+                ),
+              ))
         ],
       ),
     );
   }
 
-  Widget _buildTeamMemberCard() {
-    return Card(
-      color: const Color.fromARGB(255, 201, 210, 218),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundImage: NetworkImage('https://via.placeholder.com/150'),
-        ),
-        title: const Text("John Doe", style: TextStyle(fontSize: 12)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            LinearProgressIndicator(
-              value: 0.75,
-              backgroundColor: Colors.grey[300],
-              valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color.fromARGB(255, 0, 0, 0)),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              "Tasks: 4/5 | Overdue: 1",
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
-        ),
-      ),
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
     );
   }
 }

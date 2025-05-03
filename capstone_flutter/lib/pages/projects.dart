@@ -226,7 +226,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                         icon: const Icon(Icons.add),
                         label: const Text("Add Project"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueGrey,
+                          backgroundColor: Color.fromARGB(255, 190, 198, 208),
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
@@ -248,7 +248,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                           label: Text(status),
                           selected: filter == status,
                           onSelected: (_) => setState(() => filter = status),
-                          selectedColor: Colors.blueGrey,
+                          selectedColor: Color.fromARGB(255, 190, 198, 208),
                           labelStyle: TextStyle(
                             color:
                                 filter == status ? Colors.white : Colors.black,
@@ -316,7 +316,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color.fromARGB(255, 255, 255, 255),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -345,7 +345,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
                 '${project.teamCount} ${project.teamCount == 0 ? "Member" : "Members"}',
                 style: const TextStyle(
                   fontSize: 13,
-                  color: Colors.blueGrey,
+                  color:  Color.fromARGB(255, 190, 198, 208),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -359,9 +359,9 @@ class _ProjectsPageState extends State<ProjectsPage> {
                 LinearProgressIndicator(
                   value: project.progress,
                   minHeight: 6,
-                  backgroundColor: Colors.grey.shade200,
+                  backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                   valueColor:
-                      const AlwaysStoppedAnimation<Color>(Colors.blueGrey),
+                      const AlwaysStoppedAnimation<Color>(Color.fromARGB(255, 171, 184, 195)),
                 ),
                 const SizedBox(height: 4),
                 Text('${(project.progress * 100).toInt()}%',

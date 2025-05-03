@@ -97,16 +97,22 @@ def create_project(db: Session, project: schemas.ProjectCreate, creator_id: int)
         raise Exception(f"Error creating project: {str(e)}")
     
 def project_to_dict(project):
+    # Recalculate progress on the fly based on tasks
+    completed_tasks = sum(1 for t in project.tasks if t.category == "Completed")
+    total_tasks = len(project.tasks)
+    progress = completed_tasks / total_tasks if total_tasks > 0 else 0.0
+
     return {
         "project_id": project.project_id,
         "title": project.title,
         "project_description": project.project_description,
         "workspace": project.workspace,
-        "team_count": len(project.team_members),  # ✅ calculated dynamically
-        "progress": float(project.progress or 0) if project.progress is not None else 0.0,
+        "team_count": len(project.team_members),
+        "progress": float(progress),  # dynamically calculated
         "creator_name": f"{project.creator.first_name} {project.creator.last_name}" if project.creator else None,
         "creator_id": project.creator_id
     }
+
 
 
 
@@ -161,6 +167,8 @@ def get_tasks_by_project(db: Session, project_id: int):
             "category": task.category,
             "created_at": task.created_at,
             "assigned_to": assigned_user or "Unassigned"
+            
+            
         })
 
     return results
