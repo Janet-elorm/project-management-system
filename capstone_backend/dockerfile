@@ -4,19 +4,16 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-
+# Upgrade pip and install dependencies early for caching
 COPY requirement.txt .
-RUN pip install --no-cache-dir -r requirement.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirement.txt
 
-# Copy all files into the container
+# Copy all source files into the container
 COPY . .
 
-# Install dependencies
-RUN pip install --upgrade pip
-RUN pip install fastapi uvicorn sqlalchemy python-dotenv pydantic passlib bcrypt email-validator python-multipart
-
-# Expose the port
+# Expose the FastAPI port
 EXPOSE 8000
 
-# Start the server
+# Run the app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -16,5 +16,6 @@ email-validator
 python-jose
 oauthlib
 requests
-
+itsdangerous
+cryptography
 

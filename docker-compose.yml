@@ -1,0 +1,42 @@
+
+
+services:
+  backend:
+    build:
+      context: ./capstone_backend
+    container_name: capstone_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./capstone_backend:/app
+    environment:
+      - "DATABASE_URL=mysql+pymysql://user:capstone123@db:3306/capstone_project"
+    depends_on:
+      - db
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: mysql:8.0
+    container_name: capstone_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: capstone_project
+      MYSQL_USER: user
+      MYSQL_PASSWORD: capstone123
+      MYSQL_ROOT_PASSWORD: 12345
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  frontend:
+    build:
+      context: ./capstone_flutter
+    container_name: capstone_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:

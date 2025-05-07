@@ -112,8 +112,8 @@ class ProjectInvitation(Base):
 
     invitation_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     project_id = Column(Integer, ForeignKey("Projects.project_id"), nullable=False)  # Add this line
-    email = Column(String, nullable=False)
-    token = Column(String, unique=True, nullable=False)
+    email = Column(String(255), nullable=False)
+    token = Column(String(255), unique=True, nullable=False)
     status = Column(Enum("Pending", "Accepted", "Declined"), default="Pending")
     created_at = Column(DateTime, server_default=func.now()) 
     accepted_at = Column(DateTime, nullable=True)  # Remove server_default here

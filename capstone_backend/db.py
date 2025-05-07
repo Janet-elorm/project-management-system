@@ -1,32 +1,28 @@
 import os
+import pymysql
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-import pymysql
 
+# Enable PyMySQL as MySQLdb
 pymysql.install_as_MySQLdb()
 
-DB_USER = os.getenv("MYSQL_USER", "root")
-DB_PASSWORD = os.getenv("MYSQL_PASSWORD", "12345")
-#DB_HOST = os.getenv("MYSQL_HOST", "db")
-DB_HOST = os.getenv("MYSQL_HOST", "localhost")
-DB_NAME = os.getenv("MYSQL_DATABASE", "capstone_project")
+# Escape special characters in the password: U$E& → U%24E%26
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "mysql+pymysql://user:capstone123@db:3306/capstone_project"  # KEEP this as is, container uses 3306
+)
 
-DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
+# Create SQLAlchemy engine
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
-try:
-    engine = create_engine(DATABASE_URL)
-    engine.connect()
-    print("Database connected successfully")
-
-except Exception as e:
-    print(f"Error connecting to database: {e}")
-    # Handle the error appropriately
-
+# Create a configured session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Base class for models
 Base = declarative_base()
 
+# Dependency to get a DB session
 def get_db():
     db = SessionLocal()
     try:
