@@ -78,7 +78,7 @@ def get_projects(db: Session):
         raise Exception(f"Error fetching projects: {str(e)}")
     
 
-def create_project(db: Session, project: schemas.ProjectCreate, creator_id: int):  # Add creator_id parameter
+def create_project(db: Session, project: schemas.ProjectCreate, creator_id: int):
     try:
         new_project = models.Project(
             title=project.title,
@@ -86,7 +86,8 @@ def create_project(db: Session, project: schemas.ProjectCreate, creator_id: int)
             workspace=project.workspace,
             team_count=project.team_count,
             progress=project.progress,
-            creator_id=creator_id  # Set the creator
+            due_date=project.due_date,  # ✅ Add this line
+            creator_id=creator_id
         )
         db.add(new_project)
         db.commit()
@@ -95,6 +96,7 @@ def create_project(db: Session, project: schemas.ProjectCreate, creator_id: int)
     except Exception as e:
         db.rollback()
         raise Exception(f"Error creating project: {str(e)}")
+
     
 def project_to_dict(project):
     # Recalculate progress on the fly based on tasks

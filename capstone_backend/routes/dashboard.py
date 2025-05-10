@@ -10,6 +10,8 @@ from fastapi.encoders import jsonable_encoder
 from crud import update_project_progress  
 from schemas import TaskUpdate, TaskCreateWithAssignments  # make sure you import it
 from fastapi import BackgroundTasks
+from datetime import datetime, timedelta
+
 
 router = APIRouter()
 
@@ -544,3 +546,113 @@ def create_task_with_assignments(
         "task_id": new_task.task_id,
         "details": results
     }
+from datetime import datetime, date
+
+@router.get("/notifications")
+def get_notifications(
+    db: Session = Depends(get_db),
+    user_data: dict = Depends(decode_jwt_token)
+):
+    user_id = user_data["user_id"]
+    now = datetime.utcnow()
+
+    # Time markers
+    in_1_day = now + timedelta(days=1)
+    in_3_days = now + timedelta(days=3)
+    in_7_days = now + timedelta(days=7)
+
+    # === Task Notifications ===
+    base_task_query = (
+        db.query(models.Task)
+        .join(models.UserAssignment)
+        .filter(
+            models.UserAssignment.user_id == user_id,
+            models.Task.due_date != None,
+            models.Task.progress < 0.99  # Not completed
+        )
+    )
+
+    due_in_1_day = base_task_query.filter(
+        models.Task.due_date > now,
+        models.Task.due_date <= in_1_day
+    ).all()
+
+    due_in_3_days = base_task_query.filter(
+        models.Task.due_date > in_1_day,
+        models.Task.due_date <= in_3_days
+    ).all()
+
+    due_in_7_days = base_task_query.filter(
+        models.Task.due_date > in_3_days,
+        models.Task.due_date <= in_7_days
+    ).all()
+
+    overdue_tasks = base_task_query.filter(
+        models.Task.due_date < now
+    ).all()
+
+    # === Project Deadline Notifications ===
+    project_deadlines = (
+        db.query(models.Project)
+        .filter(
+            (models.Project.creator_id == user_id) |
+            (models.Project.team_members.any(user_id=user_id)),
+            models.Project.due_date != None,
+            models.Project.due_date > now,
+            models.Project.due_date <= in_7_days,
+            models.Project.progress < 1.0
+        )
+        .all()
+    )
+
+    # === Serializers ===
+    def serialize_tasks(tasks):
+        return [
+            {
+                "title": t.title,
+                "due_date": t.due_date.isoformat(),
+                "project_id": t.project_id
+            }
+            for t in tasks
+        ]
+
+    def serialize_projects(projects):
+        return [
+            {
+                "title": p.title,
+                "due_date": p.due_date.isoformat(),
+                "project_id": p.project_id
+            }
+            for p in projects
+        ]
+
+    return {
+        "reminders": {
+            "due_tomorrow": serialize_tasks(due_in_1_day),
+            "due_in_3_days": serialize_tasks(due_in_3_days),
+            "due_in_7_days": serialize_tasks(due_in_7_days)
+        },
+        "overdue_tasks": serialize_tasks(overdue_tasks),
+        "project_deadlines": serialize_projects(project_deadlines)
+    }
+    
+@router.get("/projects/{project_id}/activities")
+def get_project_activities(project_id: int, db: Session = Depends(get_db)):
+    activities = (
+        db.query(models.Activity)
+        .join(models.User, models.Activity.user_id == models.User.user_id)
+        .filter(models.Activity.project_id == project_id)
+        .order_by(models.Activity.timestamp.desc())
+        .limit(10)
+        .all()
+    )
+
+    return [
+        {
+            "user": f"{activity.user.first_name}",
+            "task": activity.task_title,
+            "action": activity.action,
+            "timestamp": activity.timestamp.isoformat()
+        }
+        for activity in activities
+    ]

@@ -29,6 +29,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+
   frontend:
     build:
       context: ./capstone_flutter
@@ -37,6 +38,18 @@ services:
       - "3000:80"
     depends_on:
       - backend
+    volumes:
+      - ./capstone_flutter/build/web:/usr/share/nginx/html
+
+
+  # frontend:
+  #   build:
+  #     context: ./capstone_flutter
+  #   container_name: capstone_frontend
+  #   ports:
+  #     - "3000:80"
+  #   depends_on:
+  #     - backend
 
 volumes:
   mysql_data:

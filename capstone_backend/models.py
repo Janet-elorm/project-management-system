@@ -2,6 +2,9 @@ from sqlalchemy import Column, Integer, String, DECIMAL, ForeignKey, Enum, DateT
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from db import Base  # Import the Base from your db connection
+from datetime import datetime
+
+from sqlalchemy import Date  # already imported
 
 class Project(Base):
     __tablename__ = "Projects"
@@ -14,10 +17,11 @@ class Project(Base):
     progress = Column(DECIMAL(5, 2), nullable=True)
     creator_id = Column(Integer, ForeignKey("Users.user_id"))
     created_at = Column(DateTime, server_default=func.now())
+    due_date = Column(Date, nullable=True)  # ✅ ADD THIS LINE
 
     tasks = relationship("Task", back_populates="project")
     team_members = relationship("ProjectTeam", back_populates="project")
-    creator = relationship("User", back_populates="created_projects")  # Note the back_populates name
+    creator = relationship("User", back_populates="created_projects")
 
 
 class User(Base):
@@ -120,4 +124,15 @@ class ProjectInvitation(Base):
     
     
     
+class Activity(Base):
+    __tablename__ = "activities"
 
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("Users.user_id"))
+    project_id = Column(Integer, ForeignKey("Projects.project_id"))
+    task_title = Column(String(255), nullable=False)
+    action = Column(String(255), nullable=False)  # e.g., completed, edited, added
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+    project = relationship("Project")
