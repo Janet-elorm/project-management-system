@@ -79,6 +79,16 @@ CREATE TABLE project_invitations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE activities (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT,
+  project_id INT,
+  task_title VARCHAR(255) NOT NULL,
+  action VARCHAR(100) NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id),
+  FOREIGN KEY (project_id) REFERENCES projects(project_id)
+);
 
 ALTER TABLE Users DROP COLUMN full_name;  -- Remove full_name since we use first_name & last_name
 ALTER TABLE Users ADD COLUMN first_name VARCHAR(50) NOT NULL;
@@ -97,8 +107,10 @@ ALTER TABLE project_invitations MODIFY COLUMN status ENUM('Pending', 'Accepted',
 ALTER TABLE project_invitations ADD column project_id int;
 ALTER TABLE Tasks MODIFY COLUMN category ENUM('To Do', 'In Progress', 'Completed') NOT NULL;
 ALTER TABLE Projects ADD COLUMN creator_id INT, ADD CONSTRAINT fk_creator FOREIGN KEY (creator_id) REFERENCES Users(user_id);
+Alter table Projects ADD COLUMN due_date DATE NULL;
 
 SHOW CREATE TABLE Projects;
+
 
 
 

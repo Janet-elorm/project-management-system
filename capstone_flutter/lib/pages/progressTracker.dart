@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:capstone_flutter/pages/taskManager.dart';
 import 'package:capstone_flutter/widgets/mini_sidebar.dart';
 import 'package:capstone_flutter/widgets/projectdata.dart';
 import 'package:http/http.dart' as http;
@@ -25,6 +26,8 @@ class _ProgressTrackingPageState extends State<ProgressTrackingPage> {
   List<Map<String, dynamic>> _projects = [];
   late int _currentProjectId;
   double? projectProgress;
+  List<Map<String, dynamic>> recentActivities = [];
+  List<Map<String, dynamic>> _teamMembers = [];
 
   @override
   void initState() {
@@ -32,6 +35,28 @@ class _ProgressTrackingPageState extends State<ProgressTrackingPage> {
     _currentProjectId = widget.projectId;
     fetchProjects();
     fetchAndSetProgress();
+    fetchRecentActivities();
+    fetchTeamProgress();
+  }
+
+  Future<void> fetchTeamProgress() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+
+    final response = await http.get(
+      Uri.parse(
+          'http://127.0.0.1:8000/dashboard/projects/$_currentProjectId/members'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _teamMembers = List<Map<String, dynamic>>.from(data);
+      });
+    } else {
+      debugPrint("Failed to fetch team progress: ${response.body}");
+    }
   }
 
   Future<void> fetchAndSetProgress() async {
@@ -64,6 +89,41 @@ class _ProgressTrackingPageState extends State<ProgressTrackingPage> {
     }
   }
 
+  Future<void> fetchRecentActivities() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      final response = await http.get(
+        Uri.parse(
+            'http://127.0.0.1:8000/dashboard/projects/$_currentProjectId/activities'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          recentActivities = List<Map<String, dynamic>>.from(data);
+        });
+      } else {
+        debugPrint("Failed to fetch activities: ${response.body}");
+      }
+    } catch (e) {
+      debugPrint("Error fetching activities: $e");
+    }
+  }
+
+  String _formatTimeAgo(String timestamp) {
+    final time = DateTime.parse(timestamp).toLocal();
+    final diff = DateTime.now().difference(time);
+
+    if (diff.inSeconds < 60) return "just now";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} minutes ago";
+    if (diff.inHours < 24) return "${diff.inHours} hours ago";
+    if (diff.inDays < 7) return "${diff.inDays} days ago";
+    return "${time.year}-${time.month.toString().padLeft(2, '0')}-${time.day.toString().padLeft(2, '0')}";
+  }
+
   void handlePageSelected(String page) {
     if (page == "Dashboard") {
       Navigator.pushReplacement(
@@ -78,6 +138,14 @@ class _ProgressTrackingPageState extends State<ProgressTrackingPage> {
               ProgressTrackingPage(projectId: widget.projectId),
         ),
       );
+      } else if (page == "Task Manager") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              TaskManagerPage(projectId: widget.projectId),
+        ),
+      );
     } else if (page == "Projects") {
       Navigator.pushReplacement(
         context,
@@ -88,49 +156,49 @@ class _ProgressTrackingPageState extends State<ProgressTrackingPage> {
   }
 
   @override
-@override
-Widget build(BuildContext context) {
-  return MainLayout(
-    selectedPage: selectedPage,
-    onPageSelected: handlePageSelected,
-    child: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ✅ Keep only one MiniSidebar (left-aligned beside sidebar)
-          MiniSidebar(
-            selectedProjectId: _currentProjectId,
-            onProjectSelected: (projectId) {
-              setState(() {
-                _currentProjectId = projectId;
-                fetchAndSetProgress();
-              });
-            },
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 20),
-                _buildRecentActivities(),
-              ],
+  Widget build(BuildContext context) {
+    return MainLayout(
+      selectedPage: selectedPage,
+      onPageSelected: handlePageSelected,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ Keep only one MiniSidebar (left-aligned beside sidebar)
+            MiniSidebar(
+              selectedProjectId: _currentProjectId,
+              onProjectSelected: (projectId) {
+                setState(() {
+                  _currentProjectId = projectId;
+                  fetchAndSetProgress();
+                  fetchRecentActivities();
+                  fetchTeamProgress();
+                });
+              },
             ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            flex: 1,
-            child: _buildTeamProgress(),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  const SizedBox(height: 20),
+                  _buildRecentActivities(),
+                ],
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              flex: 1,
+              child: _buildTeamProgress(),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildHeader() {
     return Container(
@@ -175,74 +243,94 @@ Widget build(BuildContext context) {
       ),
     );
   }
-Widget _buildRecentActivities() {
-    List<String> actions = ["completed", "edited", "added", "deleted"];
-    List<Map<String, String>> activities = [
-      {"name": "Constance", "task": "Social Media Publicity", "time": "1 hour ago"},
-      {"name": "Elorm", "task": "Build UI for homepage", "time": "2 hours ago"},
-      {"name": "Olivia", "task": "Print new signage", "time": "3 hours ago"},
-      {"name": "Elorm", "task": "Conduct final user testing", "time": "5 hours ago"},
-      {"name": "Constance", "task": "Update product pages", "time": "7 hours ago"},
-      {"name": "Elorm", "task": "Define app requirements", "time": "12 hours ago"},
-    ];
 
-    return Container(
+  Widget _buildRecentActivities() {
+  return Expanded(
+    child: Container(
+      width: double.infinity,  // ✅ Stretch to full width
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Recent Activities", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text("Recent Activities",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           SizedBox(height: 12),
-          ...activities.map((activity) {
-            String action = actions[_random.nextInt(actions.length)];
-            return ListTile(
-              leading: Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
-              title: Text("${activity['name']} $action '${activity['task']}'", style: TextStyle(fontSize: 13)),
-              subtitle: Text(activity['time']!, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-            );
-          })
+          Expanded(
+            child: recentActivities.isEmpty
+                ? Center(
+                    child: Text("No recent activities yet",
+                        style: TextStyle(color: Colors.grey)))
+                : ListView(
+                    children: recentActivities.map((activity) {
+                      return ListTile(
+                        leading: Icon(Icons.history,
+                            color: Colors.blueGrey, size: 20),
+                        title: Text(
+                          "${activity['user']} ${activity['action']} '${activity['task']}'",
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        subtitle: Text(
+                          _formatTimeAgo(activity['timestamp']),
+                          style:
+                              TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+          )
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildTeamProgress() {
-    List<Map<String, dynamic>> teamMembers = [
-      {"name": "Constance Antwi", "tasks": "5/7", "overdue": "1", "progress": 0.71},
-      {"name": "Olivia Mawuena", "tasks": "4/6", "overdue": "0", "progress": 0.66},
-      {"name": "Elorm Ashigbui", "tasks": "4/9", "overdue": "0", "progress": 0.44},
-    ];
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Team Progress", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          Text("Team Progress",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           SizedBox(height: 12),
-          ...teamMembers.map((member) => Card(
-                color: Color(0xFFE8EEF1),
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                child: ListTile(
-                  leading: CircleAvatar(backgroundImage: NetworkImage('https://via.placeholder.com/150')),
-                  title: Text(member['name'], style: TextStyle(fontSize: 12)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      LinearProgressIndicator(
-                        value: member['progress'],
-                        backgroundColor: Colors.grey[300],
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blueGrey),
-                        minHeight: 6,
-                      ),
-                      SizedBox(height: 4),
-                      Text("Tasks: ${member['tasks']} | Overdue: ${member['overdue']}", style: TextStyle(fontSize: 11))
-                    ],
+          _teamMembers.isEmpty
+              ? Text("No team data yet", style: TextStyle(color: Colors.grey))
+              : Expanded(
+                  child: ListView(
+                    children: _teamMembers.map((member) {
+                      return Card(
+                        color: Color(0xFFE8EEF1),
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                              backgroundImage: NetworkImage(
+                                  'https://via.placeholder.com/150')),
+                          title: Text(member['name'] ?? 'Unknown',
+                              style: TextStyle(fontSize: 12)),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              LinearProgressIndicator(
+                                value: member['progress']?.toDouble() ?? 0.0,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.blueGrey),
+                                minHeight: 6,
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                  "Tasks: ${member['tasks_completed']}/${member['tasks_total']} | Overdue: ${member['overdue_tasks']}",
+                                  style: TextStyle(fontSize: 11))
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
-              ))
         ],
       ),
     );

@@ -87,7 +87,9 @@ class Debouncer {
 
 class TopBar extends StatefulWidget {
   final String apiBaseUrl;
-  const TopBar({Key? key, required this.apiBaseUrl}) : super(key: key);
+  final int projectId;
+  const TopBar({Key? key, required this.apiBaseUrl, required this.projectId})
+      : super(key: key);
 
   @override
   _TopBarState createState() => _TopBarState();
@@ -342,7 +344,9 @@ class _TopBarState extends State<TopBar> {
 
   void _navigateToProfilePage() {
     Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ProfilePage()));
+        context,
+        MaterialPageRoute(
+            builder: (context) => ProfilePage(projectId: widget.projectId)));
   }
 
   Future<void> _signOut() async {

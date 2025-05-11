@@ -11,6 +11,7 @@ from crud import update_project_progress
 from schemas import TaskUpdate, TaskCreateWithAssignments  # make sure you import it
 from fastapi import BackgroundTasks
 from datetime import datetime, timedelta
+from models import Activity
 
 
 router = APIRouter()
@@ -201,26 +202,50 @@ def update_task_category(task_id: int, category: str, db: Session = Depends(get_
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
 @router.put("/tasks/{task_id}")
-async def update_task(task_id: int, updated_data: TaskUpdate, db: Session = Depends(get_db)):
+async def update_task(task_id: int, updated_data: TaskUpdate, db: Session = Depends(get_db), user_data: dict = Depends(decode_jwt_token)):
     try:
         task = db.query(models.Task).filter(models.Task.task_id == task_id).first()
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
 
+        # Track if anything changed
+        changes = []
+
         # Update task fields
-        if updated_data.title is not None:
+        if updated_data.title is not None and updated_data.title != task.title:
+            changes.append(f"title updated to '{updated_data.title}'")
             task.title = updated_data.title
-        if updated_data.description is not None:
+        if updated_data.description is not None and updated_data.description != task.description:
+            changes.append("description updated")
             task.description = updated_data.description
-        if updated_data.progress is not None:
+        if updated_data.progress is not None and updated_data.progress != task.progress:
+            changes.append(f"progress updated to {updated_data.progress * 100:.0f}%")
             task.progress = updated_data.progress
-        if updated_data.due_date is not None:
+        if updated_data.due_date is not None and updated_data.due_date != task.due_date:
+            changes.append(f"due date changed")
             task.due_date = updated_data.due_date
+        if updated_data.category is not None and updated_data.category != task.category:
+            changes.append(f"category changed to '{updated_data.category}'")
+            task.category = updated_data.category
+
 
         db.commit()
         db.refresh(task)
 
+        # Record activity if there are changes
+        if changes:
+            activity = Activity(
+                user_id=user_data["user_id"],
+                project_id=task.project_id,
+                action=", ".join(changes),
+                task_title=task.title,
+                timestamp=datetime.utcnow()  # ✅ Use correct field name!
+                
+                )
+            db.add(activity)
+            db.commit()
         # Recalculate project progress
         tasks = db.query(models.Task).filter(models.Task.project_id == task.project_id).all()
         if tasks:

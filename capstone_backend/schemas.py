@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, HttpUrl 
+from pydantic import BaseModel, EmailStr, HttpUrl
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
+
 
 # Schema for creating a project
 class ProjectCreate(BaseModel):
@@ -10,6 +11,7 @@ class ProjectCreate(BaseModel):
     workspace: Optional[str] = None
     team_count: Optional[int] = None
     progress: Optional[float] = None
+    due_date: Optional[date] = None
 
 
 # Schema for reading a project from the database

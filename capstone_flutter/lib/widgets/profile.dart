@@ -1,22 +1,29 @@
 import 'dart:io';
+import 'package:capstone_flutter/pages/dashboard.dart';
+import 'package:capstone_flutter/pages/progressTracker.dart';
+import 'package:capstone_flutter/pages/projects.dart';
+import 'package:capstone_flutter/pages/taskManager.dart';
+import 'package:capstone_flutter/widgets/mainLayout.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:capstone_flutter/api_service/auth_service.dart';
 
 class ProfilePage extends StatefulWidget {
+  final int projectId;
+  const ProfilePage({Key? key, required this.projectId}) : super(key: key);
+
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
   final AuthService _authService = AuthService();
-  final _formKey = GlobalKey<FormState>();
   File? _imageFile;
   String? _profileImageUrl;
   bool _isLoading = false;
-  bool _isEditing = false;
-  
-  // User data fields
+  String selectedPage = "Profile";
+
+  // User data
   String _firstName = '';
   String _lastName = '';
   String _email = '';
@@ -48,8 +55,6 @@ class _ProfilePageState extends State<ProfilePage> {
           _bio = userData['bio'] ?? 'Discuss only during work hours';
         });
       }
-    } catch (e) {
-      print("Error loading profile data: $e");
     } finally {
       setState(() => _isLoading = false);
     }
@@ -63,356 +68,176 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _deleteImage() async {
-    setState(() {
-      _imageFile = null;
-      _profileImageUrl = null;
-    });
-    // TODO: Implement API call to delete profile picture
-  }
-
-  Future<void> _saveChanges() async {
-    if (!_formKey.currentState!.validate()) return;
-    
-    setState(() => _isLoading = true);
-    try {
-      // First upload image if changed
-      if (_imageFile != null) {
-        await _authService.uploadProfilePicture(_imageFile!);
-      }
-      
-      // Then update profile data
-      final updated = await _authService.updateProfile(
-        firstName: _firstName,
-        lastName: _lastName,
-        phone: _phone,
-        bio: _bio,
+  void handlePageSelected(String page) {
+    if (page == "Dashboard") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardPage()),
       );
-      
-      if (updated) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
-        );
-        setState(() => _isEditing = false);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile: $e')),
+    } else if (page == "Progress Tracker") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProgressTrackingPage(projectId: widget.projectId),
+        ),
       );
-    } finally {
-      setState(() => _isLoading = false);
+    } else if (page == "Task Manager") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TaskManagerPage(projectId: widget.projectId),
+        ),
+      );
+    } else if (page == "Projects") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProjectsPage(projectId: widget.projectId),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("My Profile"),
-        actions: [
-          if (_isEditing)
-            TextButton(
-              onPressed: _saveChanges,
-              child: const Text('SAVE', style: TextStyle(color: Colors.white)),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => setState(() => _isEditing = true),
-              tooltip: 'Edit Profile',
-            ),
-        ],
-      ),
-      body: _isLoading
+    return MainLayout(
+      selectedPage: selectedPage,
+      onPageSelected: handlePageSelected,
+      child: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Profile Picture Section
-                    Center(
-                      child: Stack(
-                        alignment: Alignment.bottomRight,
-                        children: [
-                          CircleAvatar(
-                            radius: 60,
-                            backgroundImage: _imageFile != null
-                                ? FileImage(_imageFile!)
-                                : (_profileImageUrl != null
-                                    ? NetworkImage(_profileImageUrl!)
-                                    : const AssetImage('assets/default_profile.png')
-                                        as ImageProvider),
-                          ),
-                          if (_isEditing)
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.camera_alt, size: 20),
-                                    color: Colors.white,
-                                    style: IconButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                    ),
-                                    onPressed: _pickImage,
-                                  ),
-                                  if (_profileImageUrl != null || _imageFile != null)
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, size: 20),
-                                      color: Colors.white,
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: Colors.red,
-                                      ),
-                                      onPressed: _deleteImage,
-                                    ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (_isEditing) ...[
-                      const SizedBox(height: 8),
-                      Center(
-                        child: TextButton(
-                          onPressed: _pickImage,
-                          child: const Text('Change picture'),
-                        ),
-                      ),
-                    ],
-
-                    const SizedBox(height: 24),
-                    
-                    // Profile Name and Position
-                    Center(
-                      child: Column(
-                        children: [
-                          Text(
-                            '$_firstName $_lastName',
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            _position,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-                    const Divider(),
-
-                    // Personal Information Section
-                    const Text(
-                      'Personal Information',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // First Name & Last Name
-                    Row(
+          : Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Row(
+                children: [
+                  // Left side profile photo & name
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Expanded(
-                          child: _buildEditableField(
-                            label: 'First Name',
-                            value: _firstName,
-                            onChanged: (value) => _firstName = value,
-                            isEditing: _isEditing,
+                        Stack(
+                          alignment: Alignment.bottomRight,
+                          children: [
+                            CircleAvatar(
+                              radius: 70,
+                              backgroundImage: _imageFile != null
+                                  ? FileImage(_imageFile!)
+                                  : (_profileImageUrl != null
+                                      ? NetworkImage(_profileImageUrl!)
+                                      : const AssetImage('assets/default_profile.png')
+                                          as ImageProvider),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.camera_alt, color: Colors.white),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Color.fromARGB(255, 151, 167, 186),
+                              ),
+                              onPressed: _pickImage,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '$_firstName $_lastName',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: _buildEditableField(
-                            label: 'Last Name',
-                            value: _lastName,
-                            onChanged: (value) => _lastName = value,
-                            isEditing: _isEditing,
+                        Text(
+                          _position,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.green[100],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.circle, size: 12, color: Colors.green),
+                              const SizedBox(width: 6),
+                              Text(
+                                _status,
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                  ),
 
-                    // Email (non-editable)
-                    _buildInfoRow(
-                      icon: Icons.email,
-                      label: 'Email address',
-                      value: _email,
-                    ),
-                    const SizedBox(height: 16),
+                  const SizedBox(width: 40),
 
-                    // Phone
-                    _buildEditableField(
-                      label: 'Phone',
-                      value: _phone,
-                      onChanged: (value) => _phone = value,
-                      isEditing: _isEditing,
-                      icon: Icons.phone,
-                    ),
-                    const SizedBox(height: 16),
+                  // Right side details
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Bio & Details',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
 
-                    // Username (non-editable)
-                    _buildInfoRow(
-                      icon: Icons.person,
-                      label: 'Username',
-                      value: _username,
-                      subtitle: 'Available change in 25/04/2024',
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Status
-                    _buildInfoRow(
-                      icon: Icons.circle,
-                      label: 'Status',
-                      value: _status,
-                      iconColor: Colors.green,
-                    ),
-                    const SizedBox(height: 24),
-                    const Divider(),
-
-                    // About Me Section
-                    const Text(
-                      'About me',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                          _buildInfoRow('Username', _username),
+                          _buildInfoRow('Email', _email),
+                          _buildInfoRow('Phone', _phone),
+                          _buildInfoRow('About Me', _bio),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    _buildEditableField(
-                      label: '',
-                      value: _bio,
-                      onChanged: (value) => _bio = value,
-                      isEditing: _isEditing,
-                      maxLines: 3,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
     );
   }
 
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    String? subtitle,
-    Color? iconColor,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 20, color: iconColor ?? Colors.grey),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
-          ],
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 28, top: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(fontSize: 16),
-              ),
-              if (subtitle != null)
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-            ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEditableField({
-    required String label,
-    required String value,
-    required Function(String) onChanged,
-    required bool isEditing,
-    IconData? icon,
-    int maxLines = 1,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (label.isNotEmpty) ...[
-          if (icon != null)
-            Row(
-              children: [
-                Icon(icon, size: 20, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            )
-          else
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 16),
+          ),
         ],
-        isEditing
-            ? TextFormField(
-                initialValue: value,
-                onChanged: onChanged,
-                maxLines: maxLines,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                ),
-              )
-            : Padding(
-                padding: EdgeInsets.only(left: icon != null ? 28 : 0),
-                child: Text(
-                  value,
-                  style: const TextStyle(fontSize: 16),
-                ),
-              ),
-      ],
+      ),
     );
   }
 }

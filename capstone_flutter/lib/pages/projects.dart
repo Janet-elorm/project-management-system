@@ -208,7 +208,7 @@ class _ProjectsPageState extends State<ProjectsPage> {
           Expanded(
             child: Column(
               children: [
-                const TopBar(apiBaseUrl: 'http://127.0.0.1:8000'),
+                TopBar(apiBaseUrl: 'http://127.0.0.1:8000', projectId:widget.projectId),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
                   child: Row(

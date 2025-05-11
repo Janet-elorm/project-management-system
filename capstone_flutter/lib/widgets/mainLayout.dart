@@ -8,6 +8,7 @@ class MainLayout extends StatelessWidget {
   final Function(String) onPageSelected;
   final Color backgroundColor;
   final Widget? topBar; // ✅ Optional topBar passed in
+  final int? projectId;
 
   const MainLayout({
     Key? key,
@@ -15,8 +16,10 @@ class MainLayout extends StatelessWidget {
     required this.child,
     required this.onPageSelected,
     this.backgroundColor = const Color.fromARGB(255, 240, 241, 244),
-    this.topBar, // ✅ Receive topBar
-  }) : super(key: key);
+    this.topBar,
+    this.projectId,
+  }) : super(key: key); // ✅ Clean constructor with no extra 'body'
+
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +34,7 @@ class MainLayout extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                topBar ?? const TopBar(apiBaseUrl: 'http://127.0.0.1:8000')
-, // ✅ Use custom topBar if available
+                topBar ?? TopBar(apiBaseUrl: 'http://127.0.0.1:8000', projectId:projectId! ),
                 Expanded(child: child),
               ],
             ),
