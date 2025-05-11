@@ -87,9 +87,7 @@ class Debouncer {
 
 class TopBar extends StatefulWidget {
   final String apiBaseUrl;
-  final int projectId;
-  const TopBar({Key? key, required this.apiBaseUrl, required this.projectId})
-      : super(key: key);
+  const TopBar({Key? key, required this.apiBaseUrl}) : super(key: key);
 
   @override
   _TopBarState createState() => _TopBarState();
@@ -164,7 +162,7 @@ class _TopBarState extends State<TopBar> {
   void _showNotifications() async {
     final notifications = await _fetchNotifications();
 
-    setState(() => _notificationsViewed = true);
+      setState(() => _notificationsViewed = true);
 
     final overdueTasks = notifications['overdue_tasks'] ?? [];
     final dueTomorrow = notifications['reminders']?['due_tomorrow'] ?? [];
@@ -344,9 +342,7 @@ class _TopBarState extends State<TopBar> {
 
   void _navigateToProfilePage() {
     Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => ProfilePage(projectId: widget.projectId)));
+        context, MaterialPageRoute(builder: (context) => ProfilePage()));
   }
 
   Future<void> _signOut() async {

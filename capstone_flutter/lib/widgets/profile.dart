@@ -1,27 +1,20 @@
 import 'dart:io';
-import 'package:capstone_flutter/pages/dashboard.dart';
-import 'package:capstone_flutter/pages/progressTracker.dart';
-import 'package:capstone_flutter/pages/projects.dart';
-import 'package:capstone_flutter/pages/taskManager.dart';
-import 'package:capstone_flutter/widgets/mainLayout.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:capstone_flutter/api_service/auth_service.dart';
 
 class ProfilePage extends StatefulWidget {
-  final int projectId;
-  const ProfilePage({Key? key, required this.projectId}) : super(key: key);
-
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
   final AuthService _authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
   File? _imageFile;
   String? _profileImageUrl;
   bool _isLoading = false;
-  String selectedPage = "Profile";
+  bool _isEditing = false;
 
   // User data
   String _firstName = '';
@@ -68,176 +61,264 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void handlePageSelected(String page) {
-    if (page == "Dashboard") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
+  Future<void> _saveChanges() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      if (_imageFile != null) {
+        await _authService.uploadProfilePicture(_imageFile!);
+      }
+
+      final updated = await _authService.updateProfile(
+        firstName: _firstName,
+        lastName: _lastName,
+        phone: _phone,
+        bio: _bio,
       );
-    } else if (page == "Progress Tracker") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProgressTrackingPage(projectId: widget.projectId),
-        ),
-      );
-    } else if (page == "Task Manager") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TaskManagerPage(projectId: widget.projectId),
-        ),
-      );
-    } else if (page == "Projects") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ProjectsPage(projectId: widget.projectId),
-        ),
-      );
+
+      if (updated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!')),
+        );
+        setState(() => _isEditing = false);
+      }
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return MainLayout(
-      selectedPage: selectedPage,
-      onPageSelected: handlePageSelected,
-      child: _isLoading
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 220, 225, 232),
+      appBar: AppBar(
+        title: const Text("My Profile"),
+        actions: [
+          _isEditing
+              ? TextButton(
+                  onPressed: _saveChanges,
+                  child: const Text('Save', style: TextStyle(color: Colors.white)),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => setState(() => _isEditing = true),
+                ),
+        ],
+      ),
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
-                children: [
-                  // Left side profile photo & name
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Stack(
-                          alignment: Alignment.bottomRight,
+          : Center(
+              child: Container(
+                width: 1000,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left Column (Profile + Name)
+                      Expanded(
+                        flex: 1,
+                        child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 70,
-                              backgroundImage: _imageFile != null
-                                  ? FileImage(_imageFile!)
-                                  : (_profileImageUrl != null
-                                      ? NetworkImage(_profileImageUrl!)
-                                      : const AssetImage('assets/default_profile.png')
-                                          as ImageProvider),
+                            Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                CircleAvatar(
+                                  radius: 60,
+                                  backgroundImage: _imageFile != null
+                                      ? FileImage(_imageFile!)
+                                      : (_profileImageUrl != null
+                                          ? NetworkImage(_profileImageUrl!)
+                                          : const AssetImage('assets/default_profile.png')
+                                              as ImageProvider),
+                                ),
+                                if (_isEditing)
+                                  IconButton(
+                                    icon: const Icon(Icons.camera_alt, color: Colors.white),
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: Color.fromARGB(255, 151, 167, 186),
+                                    ),
+                                    onPressed: _pickImage,
+                                  ),
+                              ],
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.camera_alt, color: Colors.white),
-                              style: IconButton.styleFrom(
-                                backgroundColor: Color.fromARGB(255, 151, 167, 186),
+                            const SizedBox(height: 16),
+                            Text(
+                              '$_firstName $_lastName',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
                               ),
-                              onPressed: _pickImage,
+                            ),
+                            Text(
+                              _position,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.circle, size: 12, color: Colors.green),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _status,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '$_firstName $_lastName',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          _position,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.green[100],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.circle, size: 12, color: Colors.green),
-                              const SizedBox(width: 6),
-                              Text(
-                                _status,
-                                style: const TextStyle(fontSize: 14),
+                      ),
+
+                      const SizedBox(width: 40),
+
+                      // Right Column (Details)
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Personal Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 40),
-
-                  // Right side details
-                  Expanded(
-                    flex: 2,
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 10,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Bio & Details',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
                             ),
-                          ),
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                          _buildInfoRow('Username', _username),
-                          _buildInfoRow('Email', _email),
-                          _buildInfoRow('Phone', _phone),
-                          _buildInfoRow('About Me', _bio),
-                        ],
+                            // First Name & Last Name
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildEditableField(
+                                    label: 'First Name',
+                                    value: _firstName,
+                                    onChanged: (v) => _firstName = v,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildEditableField(
+                                    label: 'Last Name',
+                                    value: _lastName,
+                                    onChanged: (v) => _lastName = v,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Email (non-editable)
+                            _buildInfo(label: 'Email', value: _email),
+                            const SizedBox(height: 16),
+
+                            // Phone
+                            _buildEditableField(
+                              label: 'Phone',
+                              value: _phone,
+                              onChanged: (v) => _phone = v,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Username (non-editable)
+                            _buildInfo(label: 'Username', value: _username),
+                            const SizedBox(height: 16),
+
+                            // Bio
+                            _buildEditableField(
+                              label: 'About me',
+                              value: _bio,
+                              onChanged: (v) => _bio = v,
+                              maxLines: 3,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+  Widget _buildEditableField({
+    required String label,
+    required String value,
+    required Function(String) onChanged,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 16),
+        ),
+        const SizedBox(height: 6),
+        _isEditing
+            ? TextFormField(
+                initialValue: value,
+                onChanged: onChanged,
+                maxLines: maxLines,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+              )
+            : Text(
+                value,
+                style: const TextStyle(fontSize: 16),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildInfo({
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ],
     );
   }
 }
